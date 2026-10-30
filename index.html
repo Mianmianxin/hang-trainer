@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1a2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="悬挂侠">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMzN2QzYTAiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM0YmEzZmYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjQwIiBmaWxsPSIjMGIxYTJiIi8+PHJlY3QgeD0iNDAiIHk9IjM4IiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjkiIHJ4PSI0LjUiIGZpbGw9InVybCgjZykiLz48Y2lyY2xlIGN4PSI3MCIgY3k9IjYwIiByPSI3IiBmaWxsPSJ1cmwoI2cpIi8+PGNpcmNsZSBjeD0iMTEwIiBjeT0iNjAiIHI9IjciIGZpbGw9InVybCgjZykiLz48cGF0aCBkPSJNNzAgNjB2MjAiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMTEwIDYwdjIwIiBzdHJva2U9InVybCgjZykiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTcwIDgwdjE4aDQwVjgwIiBzdHJva2U9InVybCgjZykiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik04NSA5OHYyMiIgc3Ryb2tlPSJ1cmwoI2cpIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==">
+<title>小小悬挂侠 · 悬吊引体训练</title>
+<style>
+  :root{
+    --bg:#0b1a2b;
+    --bg2:#122a42;
+    --card:rgba(255,255,255,.06);
+    --card-border:rgba(255,255,255,.10);
+    --text:#eaf2fb;
+    --muted:#8fa8c0;
+    --accent:#37d3a0;
+    --accent2:#4ba3ff;
+    --warn:#ffb020;
+    --danger:#ff5c72;
+    --shadow:0 10px 40px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #1c3f5e 0%, transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, #16324a 0%, transparent 55%),
+      linear-gradient(180deg,#0b1a2b 0%,#091420 100%);
+    background-attachment:fixed;
+    color:var(--text);
+    min-height:100%;
+    overflow-x:hidden;
+  }
+  .app{max-width:520px;margin:0 auto;padding:18px 16px 96px;min-height:100vh;position:relative;}
+
+  /* ---------- 顶部 ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 16px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .logo{
+    width:38px;height:38px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid;place-items:center;font-size:20px;
+    box-shadow:0 6px 18px rgba(55,211,160,.35);
+  }
+  h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.3px;}
+  .sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.5px;}
+  .icon-btn{
+    width:38px;height:38px;border-radius:12px;border:1px solid var(--card-border);
+    background:var(--card);color:var(--text);font-size:17px;display:grid;place-items:center;
+    cursor:pointer;transition:.2s;
+  }
+  .icon-btn:active{transform:scale(.94);}
+
+  /* ---------- 卡片 ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--card-border);border-radius:20px;
+    padding:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:var(--shadow);margin-bottom:14px;
+  }
+  .card-title{font-size:13px;color:var(--muted);margin:0 0 12px;display:flex;align-items:center;gap:6px;font-weight:600;letter-spacing:.5px;}
+  .card-title .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+
+  /* ---------- 训练计划 ---------- */
+  .plan-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .field{background:rgba(0,0,0,.22);border-radius:14px;padding:10px 10px 8px;border:1px solid transparent;transition:.2s;}
+  .field:focus-within{border-color:rgba(55,211,160,.5);}
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .field .input-wrap{display:flex;align-items:baseline;gap:3px;}
+  .field input{
+    width:100%;background:transparent;border:none;outline:none;color:var(--text);
+    font-size:20px;font-weight:700;font-family:inherit;padding:0;
+  }
+  .field .unit{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .plan-summary{
+    margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7;
+    background:rgba(75,163,255,.08);border-left:2px solid var(--accent2);
+    padding:8px 12px;border-radius:0 10px 10px 0;
+  }
+  .plan-summary b{color:var(--accent);font-size:14px;}
+
+  /* ---------- 计时器 ---------- */
+  .timer-card{position:relative;overflow:hidden;text-align:center;padding:22px 16px 20px;}
+  .timer-card::before{
+    content:'';position:absolute;inset:-40% -20% auto;height:280px;
+    background:radial-gradient(closest-side, rgba(55,211,160,.18), transparent);
+    pointer-events:none;transition:.6s;
+  }
+  .timer-card.rest::before{background:radial-gradient(closest-side, rgba(255,176,32,.20), transparent);}
+  .timer-card.done::before{background:radial-gradient(closest-side, rgba(75,163,255,.24), transparent);}
+  .phase-tag{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;
+    padding:5px 12px;border-radius:999px;background:rgba(55,211,160,.14);color:var(--accent);
+    letter-spacing:.5px;position:relative;
+  }
+  .timer-card.rest .phase-tag{background:rgba(255,176,32,.14);color:var(--warn);}
+  .timer-card.done .phase-tag{background:rgba(75,163,255,.16);color:var(--accent2);}
+
+  .ring-wrap{position:relative;width:230px;height:230px;margin:16px auto 10px;}
+  .ring-wrap svg{transform:rotate(-90deg);overflow:visible;}
+  .ring-bg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:12;}
+  .ring-fg{
+    fill:none;stroke:url(#gradA);stroke-width:12;stroke-linecap:round;
+    transition:stroke-dashoffset .9s linear, stroke .4s;
+    filter:drop-shadow(0 0 10px rgba(55,211,160,.45));
+  }
+  .ring-fg.warn{stroke:url(#gradR);filter:drop-shadow(0 0 12px rgba(255,92,114,.5));}
+  .ring-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  #timeText{
+    font-size:60px;font-weight:800;line-height:1;letter-spacing:-2px;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#fff,#b9d6ea);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .ring-sub{font-size:12px;color:var(--muted);margin-top:8px;letter-spacing:1px;}
+
+  .btn-row{display:flex;gap:10px;margin-top:14px;position:relative;}
+  .btn{
+    flex:1;border:none;border-radius:16px;padding:15px 10px;font-size:15px;font-weight:700;
+    font-family:inherit;cursor:pointer;transition:.18s;letter-spacing:.5px;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#22b98a);color:#06251b;box-shadow:0 8px 24px rgba(55,211,160,.28);}
+  .btn-ghost{background:rgba(255,255,255,.07);color:var(--text);border:1px solid var(--card-border);flex:0 0 auto;padding:15px 18px;}
+  .btn-danger{background:rgba(255,92,114,.16);color:var(--danger);border:1px solid rgba(255,92,114,.3);flex:0 0 auto;padding:15px 18px;}
+  .btn:disabled{opacity:.4;pointer-events:none;}
+
+  /* ---------- 语音状态 ---------- */
+  .voice-bar{
+    display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;
+    background:rgba(0,0,0,.25);border-radius:14px;border:1px solid transparent;transition:.25s;
+    position:relative;
+  }
+  .voice-bar.listening{border-color:rgba(75,163,255,.45);background:rgba(75,163,255,.10);}
+  .voice-bar.tappable{cursor:pointer;}
+  .voice-bar.tappable:active{transform:scale(.985);}
+  .mic{
+    width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
+    background:rgba(255,255,255,.08);font-size:16px;transition:.25s;
+  }
+  .voice-bar.listening .mic{background:var(--accent2);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(75,163,255,.55);}70%{box-shadow:0 0 0 12px rgba(75,163,255,0);}100%{box-shadow:0 0 0 0 rgba(75,163,255,0);}}
+  .voice-text{font-size:12px;color:var(--muted);line-height:1.5;flex:1;}
+  .voice-text b{color:var(--text);}
+  .voice-toggle{
+    font-size:11px;padding:6px 10px;border-radius:9px;border:1px solid var(--card-border);
+    background:rgba(255,255,255,.06);color:var(--muted);cursor:pointer;font-family:inherit;flex:0 0 auto;
+  }
+  .voice-toggle.on{background:rgba(55,211,160,.16);color:var(--accent);border-color:rgba(55,211,160,.35);}
+
+  /* ---------- 组进度 ---------- */
+  .sets{display:flex;gap:8px;justify-content:center;margin-top:2px;flex-wrap:wrap;}
+  .set-pill{
+    min-width:38px;height:30px;border-radius:10px;display:grid;place-items:center;
+    font-size:12px;font-weight:700;background:rgba(255,255,255,.06);color:var(--muted);
+    border:1px solid transparent;transition:.25s;
+  }
+  .set-pill.active{background:rgba(55,211,160,.18);color:var(--accent);border-color:rgba(55,211,160,.45);}
+  .set-pill.done{background:rgba(55,211,160,.85);color:#06251b;}
+  .set-pill.rest{background:rgba(255,176,32,.18);color:var(--warn);border-color:rgba(255,176,32,.4);}
+
+  /* ---------- 日历打卡 ---------- */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .cal-nav{display:flex;gap:6px;}
+  .cal-nav button{
+    width:30px;height:30px;border-radius:9px;border:1px solid var(--card-border);
+    background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;font-size:13px;
+  }
+  .cal-month{font-size:14px;font-weight:700;letter-spacing:.5px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal-dow{font-size:10px;color:var(--muted);text-align:center;padding-bottom:4px;font-weight:600;}
+  .cal-cell{
+    aspect-ratio:1;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:12.5px;color:var(--muted);position:relative;background:rgba(255,255,255,.03);
+    transition:.2s;cursor:default;
+  }
+  .cal-cell.empty{background:transparent;}
+  .cal-cell.today{outline:2px solid rgba(75,163,255,.7);outline-offset:-2px;color:var(--accent2);font-weight:700;}
+  .cal-cell.checked{background:rgba(55,211,160,.16);color:var(--accent);font-weight:700;}
+  .cal-cell.checked::after{
+    content:'';position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent);
+  }
+  .cal-cell.perfect{background:linear-gradient(135deg,rgba(55,211,160,.9),rgba(75,163,255,.75));color:#04211c;font-weight:800;box-shadow:0 4px 14px rgba(55,211,160,.3);}
+  .cal-cell.perfect::after{background:#04211c;}
+  .cal-legend{display:flex;gap:14px;justify-content:center;margin-top:12px;font-size:10.5px;color:var(--muted);}
+  .cal-legend span{display:flex;align-items:center;gap:5px;}
+  .lg-dot{width:9px;height:9px;border-radius:3px;}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+  .stat{background:rgba(0,0,0,.22);border-radius:14px;padding:11px 8px;text-align:center;}
+  .stat .n{font-size:20px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;}
+  .stat .l{font-size:10.5px;color:var(--muted);margin-top:3px;}
+
+  /* ---------- 成就 ---------- */
+  .ach-progress-wrap{margin-bottom:14px;}
+  .ach-progress{
+    height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;
+  }
+  .ach-progress i{
+    display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width .6s cubic-bezier(.32,.72,0,1);
+    box-shadow:0 0 12px rgba(55,211,160,.5);
+  }
+  .ach-progress-text{font-size:11px;color:var(--muted);margin-top:7px;text-align:center;letter-spacing:.3px;}
+
+  .ach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .ach-item{
+    position:relative;aspect-ratio:1/1.18;border-radius:14px;
+    background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;padding:8px 4px;transition:.25s;overflow:hidden;
+  }
+  .ach-item.locked{opacity:.42;filter:grayscale(1);}
+  .ach-item.unlocked{
+    background:linear-gradient(160deg,rgba(55,211,160,.14),rgba(75,163,255,.07));
+    border-color:rgba(55,211,160,.35);
+    box-shadow:0 4px 16px rgba(55,211,160,.14);
+  }
+  .ach-item.unlocked::after{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.12), transparent 60%);
+    pointer-events:none;
+  }
+  .ach-icon-box{
+    width:44px;height:44px;display:grid;place-items:center;
+    position:relative;flex:0 0 auto;
+  }
+  .ach-name{font-size:10.5px;color:var(--text);font-weight:600;text-align:center;line-height:1.25;}
+  .ach-req{font-size:9.5px;color:var(--muted);}
+  .ach-item.unlocked .ach-name{color:var(--accent);}
+
+  /* 像素图标 */
+  .px{display:grid;image-rendering:pixelated;width:100%;height:100%;}
+  .px div{border-radius:0;}
+
+  /* 成就弹窗 */
+  .ach-card{position:relative;overflow:hidden;border-color:rgba(255,211,77,.35);}
+  .ach-glow{
+    position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at 50% 34%, rgba(255,211,77,.22), transparent 62%);
+  }
+  .ach-pop-title{
+    font-size:11px;color:#ffd34d;letter-spacing:4px;font-weight:700;display:block;margin-bottom:16px;
+    position:relative;
+  }
+  .ach-pop-icon{
+    width:88px;height:88px;margin:0 auto 16px;position:relative;
+    animation:achFloat 2.2s ease-in-out infinite;
+    filter:drop-shadow(0 6px 20px rgba(255,211,77,.4));
+  }
+  @keyframes achFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+  .ach-pop-icon .px{image-rendering:pixelated;}
+  .ach-card .celeb-title{color:#ffe9a3;}
+
+  /* ---------- 今日记录 ---------- */
+  .log-item{
+    display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);
+  }
+  .log-item:last-child{border-bottom:none;}
+  .log-time{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;min-width:44px;}
+  .log-desc{font-size:12px;color:var(--muted);flex:1;}
+  .log-badge{font-size:10.5px;padding:3px 9px;border-radius:999px;background:rgba(55,211,160,.15);color:var(--accent);font-weight:700;}
+  .empty-tip{text-align:center;color:var(--muted);font-size:12.5px;padding:22px 0;line-height:1.8;}
+
+  /* ---------- 弹层 ---------- */
+  .sheet-mask{
+    position:fixed;inset:0;background:rgba(5,12,20,.7);backdrop-filter:blur(6px);
+    display:flex;align-items:flex-end;justify-content:center;z-index:100;
+    opacity:0;pointer-events:none;transition:.25s;
+  }
+  .sheet-mask.show{opacity:1;pointer-events:auto;}
+  .sheet{
+    background:linear-gradient(180deg,#16293e,#101f30);width:100%;max-width:520px;
+    border-radius:24px 24px 0 0;padding:22px 20px calc(26px + env(safe-area-inset-bottom));
+    transform:translateY(40px);transition:.3s cubic-bezier(.32,.72,0,1);border-top:1px solid var(--card-border);
+  }
+  .sheet-mask.show .sheet{transform:translateY(0);}
+  .sheet h3{margin:0 0 14px;font-size:16px;}
+  .sheet p{font-size:13px;color:var(--muted);line-height:1.8;margin:0 0 16px;}
+  .voice-pick{display:flex;gap:8px;margin-bottom:16px;}
+  .voice-pick .btn{flex:1;font-size:13px;padding:12px 6px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--card-border);}
+  .voice-pick .btn.sel{background:rgba(55,211,160,.16);color:var(--accent);border-color:rgba(55,211,160,.4);}
+
+  /* ---------- 完成庆祝 ---------- */
+  .celebrate{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:110;
+    background:rgba(5,12,20,.82);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:.3s;
+  }
+  .celebrate.show{opacity:1;pointer-events:auto;}
+  .celeb-card{
+    width:calc(100% - 56px);max-width:340px;text-align:center;padding:30px 22px;
+    background:linear-gradient(160deg,#173a52,#102334);border-radius:26px;
+    border:1px solid rgba(55,211,160,.3);box-shadow:0 20px 60px rgba(0,0,0,.5);
+    transform:scale(.9);transition:.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .celebrate.show .celeb-card{transform:scale(1);}
+  .celeb-emoji{font-size:56px;line-height:1;margin-bottom:14px;display:block;animation:bounce 1s infinite;}
+  @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  .celeb-title{font-size:22px;font-weight:800;margin:0 0 8px;}
+  .celeb-desc{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 22px;}
+  .celeb-desc b{color:var(--accent);}
+
+  .toast{
+    position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);
+    background:rgba(30,48,66,.96);border:1px solid var(--card-border);color:var(--text);
+    padding:11px 20px;border-radius:12px;font-size:13px;z-index:200;
+    opacity:0;transition:.28s;pointer-events:none;box-shadow:var(--shadow);white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .hidden{display:none !important;}
+  @media (max-width:360px){
+    .ring-wrap{width:200px;height:200px;}
+    #timeText{font-size:52px;}
+  }
+  /* iPad / 横屏适配：内容居中不拉伸 */
+  @media (min-width:760px){
+    .app{max-width:680px;padding:26px 24px 60px;}
+    .ring-wrap{width:260px;height:260px;}
+    .ring-wrap svg{width:260px;height:260px;}
+    #timeText{font-size:68px;}
+    header h1{font-size:19px;}
+    .plan-row{gap:14px;}
+    .field input{font-size:23px;}
+    .btn{padding:17px 12px;font-size:16px;}
+  }
+  @media (orientation:landscape) and (max-height:520px){
+    .app{max-width:900px;}
+    .ring-wrap{width:180px;height:180px;margin:8px auto 4px;}
+    .ring-wrap svg{width:180px;height:180px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">🤸</div>
+      <div>
+        <h1>小小悬挂侠</h1>
+        <div class="sub">HANG &amp; GROW · 悬吊引体训练</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" title="语音设置">⚙️</button>
+  </header>
+
+  <!-- 训练设置 -->
+  <div class="card" id="planCard">
+    <p class="card-title"><span class="dot"></span>今日训练计划</p>
+    <div class="plan-row">
+      <div class="field">
+        <label>每组时长</label>
+        <div class="input-wrap"><input type="number" id="inpHold" value="30" min="1" max="600" inputmode="numeric"><span class="unit">秒</span></div>
+      </div>
+      <div class="field">
+        <label>组数</label>
+        <div class="input-wrap"><input type="number" id="inpSets" value="3" min="1" max="30" inputmode="numeric"><span class="unit">组</span></div>
+      </div>
+      <div class="field">
+        <label>组间休息</label>
+        <div class="input-wrap"><input type="number" id="inpRest" value="60" min="0" max="600" inputmode="numeric"><span class="unit">秒</span></div>
+      </div>
+    </div>
+    <div class="plan-summary" id="planSummary"></div>
+  </div>
+
+  <!-- 计时器 -->
+  <div class="card timer-card" id="timerCard">
+    <span class="phase-tag" id="phaseTag">准备就绪</span>
+
+    <div class="ring-wrap">
+      <svg width="230" height="230" viewBox="0 0 230 230">
+        <defs>
+          <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#37d3a0"/><stop offset="100%" stop-color="#4ba3ff"/>
+          </linearGradient>
+          <linearGradient id="gradR" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ff5c72"/><stop offset="100%" stop-color="#ffb020"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="115" cy="115" r="98"/>
+        <circle class="ring-fg" id="ringFg" cx="115" cy="115" r="98"/>
+      </svg>
+      <div class="ring-center">
+        <div id="timeText">0:30</div>
+        <div class="ring-sub" id="ringSub">等待开始</div>
+      </div>
+    </div>
+
+    <div class="sets" id="setsBar"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="startBtn">▶ 开始训练</button>
+      <button class="btn btn-primary hidden" id="nextBtn" style="background:linear-gradient(135deg,#4ba3ff,#2f7fe0);color:#04203a;box-shadow:0 8px 24px rgba(75,163,255,.28)">▶ 说「开始」或点这里</button>
+      <button class="btn btn-danger hidden" id="stopBtn">■ 停止</button>
+    </div>
+
+    <div class="voice-bar" id="voiceBar">
+      <div class="mic">🎤</div>
+      <div class="voice-text" id="voiceText">点「开始训练」后，说「<b>开始</b>」即可启动计时</div>
+      <button class="voice-toggle" id="voiceToggle">语音: 开</button>
+    </div>
+  </div>
+
+  <!-- 日历打卡 -->
+  <div class="card">
+    <div class="cal-head">
+      <div class="cal-month" id="calMonth">2026年10月</div>
+      <div class="cal-nav">
+        <button id="prevMonth">‹</button>
+        <button id="nextMonth">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><i class="lg-dot" style="background:rgba(55,211,160,.5)"></i>已打卡</span>
+      <span><i class="lg-dot" style="background:linear-gradient(135deg,#37d3a0,#4ba3ff)"></i>全完成</span>
+      <span><i class="lg-dot" style="background:rgba(75,163,255,.7)"></i>今天</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="statStreak">0</div><div class="l">连续打卡(天)</div></div>
+      <div class="stat"><div class="n" id="statDays">0</div><div class="l">本月打卡</div></div>
+      <div class="stat"><div class="n" id="statTotal">0</div><div class="l">累计悬吊(秒)</div></div>
+    </div>
+  </div>
+
+  <!-- 成就 -->
+  <div class="card">
+    <p class="card-title"><span class="dot"></span>我的成就 <span id="achCount" style="margin-left:auto;color:var(--accent);font-size:12px">0/12</span></p>
+    <div class="ach-progress-wrap">
+      <div class="ach-progress"><i id="achProgressBar"></i></div>
+      <div class="ach-progress-text" id="achProgressText">再打卡 5 次点亮下一个成就</div>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </div>
+
+  <!-- 今日记录 -->
+  <div class="card">
+    <p class="card-title"><span class="dot"></span>今日记录</p>
+    <div id="logList"></div>
+  </div>
+</div>
+
+<!-- 成就解锁弹窗 -->
+<div class="celebrate" id="achPop">
+  <div class="celeb-card ach-card">
+    <div class="ach-glow"></div>
+    <span class="ach-pop-title">✦ 成就解锁 ✦</span>
+    <div class="ach-pop-icon" id="achPopIcon"></div>
+    <h3 class="celeb-title" id="achPopName" style="font-size:20px"></h3>
+    <p class="celeb-desc" id="achPopDesc"></p>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-primary" id="achPopOk">收下了 ✦</button>
+    </div>
+  </div>
+</div>
+
+<!-- 语音设置弹层 -->
+<div class="sheet-mask" id="sheetMask">
+  <div class="sheet">
+    <h3>语音设置</h3>
+    <p>语音功能使用浏览器自带的语音识别与朗读，不联网上传音频，请放心使用。<br>首次使用需允许麦克风权限。<span style="color:var(--warn)">建议使用 Chrome / Edge / Safari。</span></p>
+    <div id="diagBox" style="font-size:12px;line-height:1.9;background:rgba(0,0,0,.25);border-radius:12px;padding:11px 13px;margin-bottom:14px;color:var(--muted);"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">语音播报音色</div>
+    <div class="voice-pick" id="voicePick"></div>
+    <div class="voice-pick" style="margin-top:4px;">
+      <button class="btn" id="btnTestVoice">🔊 试听播报</button>
+      <button class="btn btn-primary" id="btnCloseSheet">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 完成庆祝 -->
+<div class="celebrate" id="celebrate">
+  <div class="celeb-card">
+    <span class="celeb-emoji">🏆</span>
+    <h3 class="celeb-title">训练完成！</h3>
+    <p class="celeb-desc" id="celebDesc"></p>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-primary" id="celebOk">太棒了 👍</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 数据层 ===================== */
+const STORE_KEY = 'hang_trainer_v1';
+const todayStr = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+
+const defaultData = {
+  plan: { hold: 30, sets: 3, rest: 60 },
+  records: {},     // { '2026-10-30': { logs:[{t:'19:30', hold, sets, total}], totalSec: 120 } }
+  voiceOn: true,
+  voiceName: '',
+  voiceRate: 1
+};
+
+let DB = loadData();
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(defaultData));
+    const d = JSON.parse(raw);
+    return Object.assign(JSON.parse(JSON.stringify(defaultData)), d);
+  }catch(e){ return JSON.parse(JSON.stringify(defaultData)); }
+}
+function saveData(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }catch(e){}
+}
+
+/* ===================== 语音 ===================== */
+const synth = window.speechSynthesis;
+let voices = [];
+let currentStartIndex = 0;   // 0-based，说“开始”要启动第几组
+
+function loadVoices(){
+  if(!synth) return;
+  voices = synth.getVoices().filter(v => /zh|cmn|Chinese/i.test(v.lang) || /zh/i.test(v.name));
+  if(!voices.length) voices = synth.getVoices();
+  renderVoicePick();
+}
+if(synth){
+  loadVoices();
+  synth.onvoiceschanged = loadVoices;
+}
+
+function pickVoice(){
+  if(!voices.length) return null;
+  if(DB.voiceName){
+    const found = voices.find(v => v.name === DB.voiceName);
+    if(found) return found;
+  }
+  // 优选中文女声/标准音色
+  const prefer = voices.find(v=>/zh-CN/i.test(v.lang) && /(Xiaoxiao|Tingting|Huihui|Meijia|female|女)/i.test(v.name));
+  return prefer || voices.find(v=>/zh-CN/i.test(v.lang)) || voices[0];
+}
+
+function speak(text, {rate=1, pitch=1, interrupt=true} = {}){
+  if(!DB.voiceOn || !synth) return;
+  try{
+    if(interrupt) synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice();
+    if(v) u.voice = v;
+    u.lang = v ? v.lang : 'zh-CN';
+    u.rate = (DB.voiceRate || 1) * rate;
+    u.pitch = pitch;
+    u.volume = 1;
+    synth.speak(u);
+  }catch(e){}
+}
+
+/* ===================== 环境检测 ===================== */
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_HTTPS = location.protocol === 'https:' || location.protocol === 'file:' ||
+  location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const SECURE_OK = (typeof window.isSecureContext === 'boolean') ? window.isSecureContext : IS_HTTPS;
+
+/* iOS Safari 上：非 HTTPS 绝对无法录音；另外 iOS 对连续识别支持很差 */
+const IOS_RECOG_LIMITED = IS_IOS;   // iOS 上语音识别不可靠，走"确认模式 + 按钮兜底"
+
+/* 语音识别（连续模式，关键词触发） */
+const SR = (IS_IOS && !SECURE_OK) ? null : (window.SpeechRecognition || window.webkitSpeechRecognition);
+let recognition = null;
+let recognizing = false;
+let wantListening = false;
+let restartTimer = null;
+let micDenied = false;
+
+/* 主动申请麦克风权限（iOS 必须先 getUserMedia 才能弹权限框） */
+async function requestMic(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    if(!SECURE_OK) return {ok:false, reason:'insecure'};
+    return {ok:false, reason:'unsupported'};
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    stream.getTracks().forEach(t => t.stop());   // 只申请权限，立刻释放
+    micDenied = false;
+    return {ok:true};
+  }catch(err){
+    micDenied = true;
+    return {ok:false, reason: err && err.name === 'NotAllowedError' ? 'denied' : 'error', err};
+  }
+}
+
+function initRecognition(){
+  if(!SR) return null;
+  const r = new SR();
+  r.lang = 'zh-CN';
+  // iOS 不支持 continuous 保持聆听，必须单次识别
+  r.continuous = !IS_IOS;
+  r.interimResults = true;
+  r.maxAlternatives = 3;
+
+  r.onstart = () => { recognizing = true; updateVoiceUI(); };
+  r.onend = () => {
+    recognizing = false;
+    updateVoiceUI();
+    if(wantListening){
+      clearTimeout(restartTimer);
+      restartTimer = setTimeout(() => { try{ r.start(); }catch(e){} }, IS_IOS ? 800 : 400);
+    }
+  };
+  r.onerror = (e) => {
+    recognizing = false;
+    updateVoiceUI();
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      wantListening = false;
+      if(!SECURE_OK){
+        setVoiceText('⚠️ 非安全连接(<b>http</b>)无法使用麦克风，请用 https 打开');
+      } else {
+        setVoiceText('⚠️ 麦克风被拒绝，去 Safari 设置里允许后刷新');
+      }
+      document.getElementById('voiceToggle').classList.remove('on');
+      document.getElementById('voiceToggle').textContent = '语音: 关';
+    }
+    if(e.error === 'no-speech' || e.error === 'audio-capture' || e.error === 'network'){ /* 静默重试 */ }
+  };
+  r.onresult = (ev) => {
+    let text = '';
+    for(let i = ev.resultIndex; i < ev.results.length; i++){
+      text += ev.results[i][0].transcript;
+    }
+    const norm = text.replace(/[\s，。！？、,\.!\?]/g,'');
+    handleVoiceCommand(norm);
+  };
+  return r;
+}
+
+const KEY_ANY        = /(开始|准备|计时|走起|起来|预备|action|start|go)/i;
+const KEY_NEXT       = /(下一组|继续|再来|下一|go\s*on|next)/i;
+const KEY_STOP       = /(停止|停下|结束|停|cancel|stop)/i;
+const KEY_REST_SKIP  = /(跳过|不用休息|直接|skip)/i;
+
+function handleVoiceCommand(t){
+  if(!t) return;
+  // 训练中：优先处理停止/跳过/下一组
+  if(mode === 'hold' || mode === 'rest'){
+    if(KEY_STOP.test(t)){ stopTraining('语音停止'); setVoiceText('已停止训练'); return; }
+    if(mode === 'rest' && (KEY_REST_SKIP.test(t))){ skipRest(); setVoiceText('跳过休息，准备下一组'); return; }
+    if(mode === 'hold') return; // 正在悬吊，忽略其他
+  }
+
+  if(mode === 'idle' || mode === 'done'){
+    if(KEY_ANY.test(t)){
+      startTraining();
+    }
+  } else if(mode === 'awaiting') {
+    if(KEY_ANY.test(t) || KEY_NEXT.test(t)) startCountdownNext();
+  }
+}
+
+let voiceTextDefault = '';
+function setVoiceText(html){ document.getElementById('voiceText').innerHTML = html; }
+function updateVoiceUI(){
+  const bar = document.getElementById('voiceBar');
+  if(recognizing){
+    bar.classList.add('listening');
+    if(!/正在听/.test(document.getElementById('voiceText').textContent)){
+      setVoiceText('正在听… 说「<b>开始</b>」启动计时');
+    }
+  } else {
+    bar.classList.remove('listening');
+  }
+}
+
+function startListening(){
+  if(!SR){
+    if(!SECURE_OK){
+      setVoiceText('⚠️ 当前是 <b>http</b> 页面，无法使用麦克风。请用 https 打开，或用下方按钮操作');
+    } else if(IS_IOS){
+      setVoiceText('⚠️ 该浏览器不支持语音识别，点下方按钮开始，仍会语音播报');
+    } else {
+      setVoiceText('⚠️ 当前浏览器不支持语音识别，请用 Chrome / Edge，或用下方按钮');
+    }
+    return false;
+  }
+  if(!recognition) recognition = initRecognition();
+  if(!recognition) return false;
+  wantListening = true;
+  try{ recognition.start(); }catch(e){ /* 已在运行 */ }
+  return true;
+}
+
+function stopListening(){
+  wantListening = false;
+  clearTimeout(restartTimer);
+  if(recognition){ try{ recognition.abort(); }catch(e){} }
+  recognizing = false;
+  updateVoiceUI();
+}
+
+/* ===================== 计时状态机 ===================== */
+// mode: idle | awaiting(等待语音"开始") | hold(悬吊中) | rest(休息中) | done
+let mode = 'idle';
+let totalSec = 0;
+let remain = 0;
+let tickHandle = null;
+let lastTick = 0;
+let holdElapsed = 0;
+let restTotal = 0;
+let currentSet = 0;      // 已完成组数
+const R = 98, C = 2 * Math.PI * R;
+
+function readPlan(){
+  const hold = clampInt(document.getElementById('inpHold').value, 1, 600, 30);
+  const sets = clampInt(document.getElementById('inpSets').value, 1, 30, 3);
+  const rest = clampInt(document.getElementById('inpRest').value, 0, 600, 60);
+  document.getElementById('inpHold').value = hold;
+  document.getElementById('inpSets').value = sets;
+  document.getElementById('inpRest').value = rest;
+  DB.plan = {hold, sets, rest};
+  saveData();
+  renderPlanSummary();
+  if(mode === 'idle') setDisplay(hold, hold, '秒');
+  renderSets();
+  return DB.plan;
+}
+function clampInt(v, min, max, def){
+  let n = parseInt(v, 10);
+  if(isNaN(n)) n = def;
+  return Math.min(max, Math.max(min, n));
+}
+function renderPlanSummary(){
+  const {hold, sets, rest} = DB.plan;
+  const work = hold * sets;
+  const restTotalAll = rest * Math.max(0, sets - 1);
+  const totalMin = (work + restTotalAll) / 60;
+  document.getElementById('planSummary').innerHTML =
+    `共 <b>${sets}</b> 组 × <b>${hold}</b> 秒，休息 ${rest} 秒 · 合计悬吊 <b>${work}</b> 秒 ≈ ${totalMin.toFixed(1)} 分钟`;
+}
+
+function setDisplay(sec, total, unit){
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  document.getElementById('timeText').textContent =
+    total >= 60 ? `${m}:${String(s).padStart(2,'0')}` : String(sec);
+  const ring = document.getElementById('ringFg');
+  const ratio = total > 0 ? Math.max(0, Math.min(1, sec / total)) : 0;
+  ring.style.strokeDasharray = C.toFixed(2);
+  ring.style.strokeDashoffset = (C * (1 - ratio)).toFixed(2);
+  ring.classList.toggle('warn', total <= 60 ? (sec <= 10 && sec > 0) : (sec <= 10 && sec > 0));
+}
+
+function setPhaseCard(cls, tagText, subText){
+  const card = document.getElementById('timerCard');
+  card.classList.remove('rest','done');
+  if(cls) card.classList.add(cls);
+  const tag = document.getElementById('phaseTag');
+  tag.textContent = tagText;
+  document.getElementById('ringSub').textContent = subText;
+}
+
+function renderSets(){
+  const bar = document.getElementById('setsBar');
+  const {sets} = DB.plan;
+  bar.innerHTML = '';
+  for(let i = 0; i < sets; i++){
+    const el = document.createElement('div');
+    el.className = 'set-pill';
+    if(i < currentSet) el.classList.add('done');
+    else if(mode === 'hold' && i === currentSet) el.classList.add('active');
+    else if(mode === 'rest' && i === currentSet) el.classList.add('rest');
+    el.textContent = i < currentSet ? '✓' : `${i+1}`;
+    bar.appendChild(el);
+  }
+}
+
+function clearTick(){ if(tickHandle){ clearInterval(tickHandle); tickHandle = null; } }
+
+/* ---- 启动流程 ---- */
+async function startTraining(){
+  const plan = readPlan();
+  currentSet = 0;
+  holdElapsed = 0;
+  mode = 'awaiting';
+  resetAll();
+  document.getElementById('planCard').style.opacity = '0.55';
+  setPhaseCard('', '准备', '说「开始」启动第 1 组');
+  setDisplay(plan.hold, plan.hold, '秒');
+  renderSets();
+  showBtns('await');
+
+  // 提前申请麦克风（iOS 必须在用户手势里主动申请，否则不会弹出权限框）
+  let mic = {ok:true};
+  if(SR && DB.voiceOn) mic = await requestMic();
+  if(!mic.ok){
+    if(mic.reason === 'insecure'){
+      setVoiceText('⚠️ 当前是 <b>http</b> 页面，iOS 无法使用麦克风。请改用 https 打开，或点下方按钮开始');
+    } else if(mic.reason === 'denied'){
+      setVoiceText('⚠️ 麦克风权限被拒绝。<br>iOS：设置 → Safari → 麦克风 → 允许<br>或点下方按钮开始（仍有语音播报）');
+    } else {
+      setVoiceText('⚠️ 麦克风不可用，点下方按钮开始（仍有语音播报）');
+    }
+  } else {
+    setVoiceText('正在听… 说「<b>开始</b>」启动计时');
+  }
+
+  speak(`准备开始 ${plan.sets} 组悬吊，每组 ${plan.hold} 秒。说开始，就起跳！`, {rate: 1});
+
+  if(mic.ok) startListening();
+
+  // iOS 单次识别，说完会停：准备下一组时提示可点语音条重新聆听
+  if(SR && mic.ok && IS_IOS) setTimeout(()=>{
+    if(mode==='awaiting') setVoiceText('说「<b>开始</b>」；若没反应，<b>点这里</b>重新聆听');
+  }, 5000);
+}
+
+function resetAll(){
+  clearTick();
+  remain = 0;
+}
+
+function startCountdownNext(){
+  const {hold} = DB.plan;
+  mode = 'hold';
+  remain = hold;
+  totalSec = hold;
+  setPhaseCard('', `第 ${currentSet + 1} 组 · 悬吊中`, `坚持住，还有 ${hold} 秒`);
+  setDisplay(hold, hold, '秒');
+  renderSets();
+  setVoiceText(`第 <b>${currentSet+1}</b> 组进行中，坚持住！`);
+  speak(`第 ${currentSet + 1} 组，开始！`, {rate: 1.05});
+  showBtns('run');
+  startTick('hold');
+}
+
+function startTick(kind){
+  clearTick();
+  lastTick = Date.now();
+  tickHandle = setInterval(() => {
+    const now = Date.now();
+    const dt = Math.min(2, (now - lastTick) / 1000);
+    lastTick = now;
+    remain = Math.max(0, remain - dt);
+    if(kind === 'hold') holdElapsed += dt;
+
+    const shown = Math.ceil(remain);
+    setDisplay(shown, totalSec, '秒');
+
+    if(kind === 'hold'){
+      document.getElementById('ringSub').textContent = `坚持住，还有 ${shown} 秒`;
+      // 最后 3 秒倒数播报
+      if(shown <= 3 && shown > 0 && Math.abs(remain - shown) < dt + 0.05){
+        speak(String(shown), {rate: 1.15, pitch: 1.1});
+      }
+      if(remain <= 0){ onHoldEnd(); }
+    } else {
+      document.getElementById('ringSub').textContent = `休息中 · ${shown} 秒后下一组`;
+      if(shown <= 3 && shown > 0 && Math.abs(remain - shown) < dt + 0.05){
+        speak(String(shown), {rate: 1.1});
+      }
+      if(remain <= 0){ onRestEnd(); }
+    }
+  }, 100);
+}
+
+function onHoldEnd(){
+  clearTick();
+  currentSet += 1;
+  const {sets, rest} = DB.plan;
+  renderSets();
+
+  if(currentSet >= sets){
+    // 全部完成
+    finishTraining();
+    return;
+  }
+  if(rest > 0){
+    mode = 'rest';
+    restTotal = rest;
+    remain = rest;
+    totalSec = rest;
+    setPhaseCard('rest', '组间休息', `休息 ${rest} 秒，说「下一组」可跳过`);
+    setDisplay(rest, rest, '秒');
+    setVoiceText('休息中… 说「<b>下一组</b>」立即开始，或说「<b>跳过</b>」');
+    speak(`第 ${currentSet} 组完成，休息 ${rest} 秒`, {rate: 1});
+    vibrate([180, 90, 180]);
+    startTick('rest');
+  } else {
+    // 无休息，直接进入等待语音
+    toAwaitNext();
+  }
+}
+
+function toAwaitNext(){
+  clearTick();
+  mode = 'awaiting';
+  setPhaseCard('', '准备下一组', `说「开始」启动第 ${currentSet + 1} 组`);
+  setDisplay(DB.plan.hold, DB.plan.hold, '秒');
+  setVoiceText(`说「<b>开始</b>」启动第 ${currentSet + 1} 组`);
+  renderSets();
+  showBtns('await');
+  if(!recognizing && DB.voiceOn){
+    if(startListening() === false && !micDenied){
+      setVoiceText(`点「下一步」按钮启动第 ${currentSet + 1} 组`);
+    }
+  }
+}
+
+function skipRest(){
+  if(mode !== 'rest') return;
+  clearTick();
+  toAwaitNext();
+  speak('准备下一组', {rate: 1.05});
+}
+
+function onRestEnd(){
+  clearTick();
+  speak('休息结束，准备下一组', {rate: 1});
+  vibrate([120, 80, 120]);
+  toAwaitNext();
+}
+
+function finishTraining(){
+  clearTick();
+  mode = 'done';
+  const {hold, sets} = DB.plan;
+  const totalWork = Math.round(holdElapsed) || hold * sets;
+
+  // 写入记录
+  const d = todayStr();
+  if(!DB.records[d]) DB.records[d] = {logs: [], totalSec: 0};
+  const now = new Date();
+  DB.records[d].logs.push({
+    t: `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    hold, sets, total: totalWork, full: true
+  });
+  DB.records[d].totalSec = (DB.records[d].totalSec || 0) + totalWork;
+  const beforeCheckins = totalCheckins() - 1;   // 减掉刚记入的这一次
+  saveData();
+
+  setPhaseCard('done', '训练完成', `${sets} 组全部完成 🎉`);
+  setDisplay(0, 1, '秒');
+  document.getElementById('ringFg').style.strokeDashoffset = C;
+  document.getElementById('ringSub').textContent = '今天真棒！';
+  document.getElementById('timeText').textContent = '完成';
+  document.getElementById('timeText').style.fontSize = '40px';
+  setVoiceText('🎉 训练完成，已记录到日历');
+  speak('太棒了！全部完成，今天真厉害！', {rate: 1, pitch: 1.15});
+  vibrate([200,100,200,100,300]);
+
+  document.getElementById('celebDesc').innerHTML =
+    `完成 <b>${sets}</b> 组，累计悬吊 <b>${totalWork}</b> 秒<br>坚持就是超能力，明天继续加油！`;
+  document.getElementById('celebrate').classList.add('show');
+  pendingAch = {before: beforeCheckins};
+
+  renderCalendar();
+  renderLogs();
+  renderStats();
+  renderAchievements();
+  stopListening();
+  showBtns('start');
+  document.getElementById('planCard').style.opacity = '1';
+  document.getElementById('startBtn').textContent = '▶ 再练一次';
+  document.getElementById('timeText').style.fontSize = '';
+}
+
+function stopTraining(reason){
+  clearTick();
+  mode = 'idle';
+  currentSet = 0;
+  stopListening();
+  setPhaseCard('', '准备就绪', '等待开始');
+  document.getElementById('timeText').textContent = '0:30';
+  document.getElementById('timeText').style.fontSize = '';
+  setDisplay(DB.plan.hold, DB.plan.hold, '秒');
+  showBtns('start');
+  document.getElementById('planCard').style.opacity = '1';
+  renderSets();
+  if(reason) speak('训练已停止', {rate: 1});
+}
+
+/* 按钮显隐：start | await | run */
+function showBtns(which){
+  const s = document.getElementById('startBtn');
+  const n = document.getElementById('nextBtn');
+  const x = document.getElementById('stopBtn');
+  s.classList.toggle('hidden', which !== 'start');
+  n.classList.toggle('hidden', which !== 'await');
+  x.classList.toggle('hidden', which === 'start');
+}
+function refreshBtns(){
+  const which = (mode === 'idle' || mode === 'done') ? 'start' : (mode === 'awaiting' ? 'await' : 'run');
+  showBtns(which);
+}
+
+function vibrate(p){ if(navigator.vibrate) try{ navigator.vibrate(p); }catch(e){} }
+
+/* ===================== 成就系统（我的世界风格） ===================== */
+/* 每 5 次点亮一个成就；像素图用色块网格定义 */
+
+// 调色板
+const PAL = {
+  // 草方块
+  g1:'#5b9c3a', g2:'#7cc24a', g3:'#4a7d2e', d1:'#8b5a2b', d2:'#7a4a22', d3:'#6b411d', d4:'#9c6b3a',
+  // 石头/铁/木
+  s1:'#8a8a8a', s2:'#a0a0a0', s3:'#6e6e6e',
+  w1:'#a8763e', w2:'#8b5e2f', w3:'#6b4522',
+  i1:'#d8d8d8', i2:'#b8b8b8', i3:'#9a9a9a',
+  // 金
+  y1:'#ffd84d', y2:'#e8b93a', y3:'#c99a22',
+  // 钻石
+  c1:'#5ff2e0', c2:'#35d4c0', c3:'#22a89a',
+  // 绿宝石
+  e1:'#3ee07c', e2:'#28b862', e3:'#1a8f4a',
+  // 黑曜石/下界
+  o1:'#2b1b3d', o2:'#1a1026', o3:'#4a2a6b',
+  n1:'#8b1e1e', n2:'#c43030', n3:'#e8a33a',
+  // 末影
+  p1:'#1a0f26', p2:'#0d0712', p3:'#9c4fd6', p4:'#c98fff',
+  // 通用
+  k:'#1a1a1a', wh:'#f5f5f5', r:'#e04a4a', bk:'#000000', gy:'#c8c8c8', ey:'#4a3aff'
+};
+
+/* 每个图标用 8x8 字符网格，字符对应 PAL 的键，'.'为透明 */
+const ACHIEVEMENTS = [
+  {
+    key:'grass', name:'第一块草方块', need:1, sub:'开始你的世界',
+    grid:[
+      'g2g1g2g2g1g2g1g2',
+      'g1g2g3g1g2g2g3g1',
+      'g3g1g2g3g1g2g1g3',
+      'd1d2d1d3d2d1d2d1',
+      'd2d1d3d2d1d2d1d3',
+      'd1d3d2d1d2d4d3d1',
+      'd3d2d1d2d1d2d1d2',
+      'd2d1d2d3d2d1d3d1'
+    ]
+  },
+  {
+    key:'log', name:'橡木原木', need:5, sub:'收集第一批材料',
+    grid:[
+      'w3w1w2w1w3w1w2w1',
+      'w1w2w3w2w1w3w1w2',
+      'w2w3w1w3w2w1w3w1',
+      'w3w1w2w1w3w2w1w3',
+      'w1w3w1w2w1w3w2w1',
+      'w2w1w3w1w2w1w3w2',
+      'w3w2w1w3w1w2w1w3',
+      'w1w3w2w1w3w1w2w1'
+    ]
+  },
+  {
+    key:'stone_pick', name:'石镐', need:10, sub:'学会使用工具',
+    grid:[
+      '........',
+      '.s1s1s1.',
+      's1s2s2s1',
+      's2..s1s1',
+      's...w3s1',
+      '....w3..',
+      '...w3...',
+      '..w3....'
+    ]
+  },
+  {
+    key:'iron', name:'铁锭', need:15, sub:'挖到铁矿石',
+    grid:[
+      '........',
+      '........',
+      '..i1i1..',
+      '.i1i1i1i',
+      '.i2i1i2i',
+      '.i2i2i2i',
+      '..i3i3..',
+      '........'
+    ]
+  },
+  {
+    key:'apple', name:'金苹果', need:20, sub:'恢复生命值',
+    grid:[
+      '....w3..',
+      '..w1y1..',
+      '.y1y1y1.',
+      'y1y1whwh',
+      'y1whwhwh',
+      'y1y1y1y1',
+      '.y1y1y1.',
+      '..y3y3..'
+    ]
+  },
+  {
+    key:'diamond', name:'钻石', need:25, sub:'挖到最深处',
+    grid:[
+      '........',
+      '..whc1..',
+      '.whc1c1c',
+      'whc1c1c1',
+      'c1c1c1c3',
+      '.c1c1c3.',
+      '..c1c3..',
+      '...c3...'
+    ]
+  },
+  {
+    key:'emerald', name:'绿宝石', need:30, sub:'和村民交易',
+    grid:[
+      '........',
+      '..whe1..',
+      '.whe1e1e',
+      'whe1e1e1',
+      'e1e1e1e3',
+      '.e1e1e3.',
+      '..e1e3..',
+      '...e3...'
+    ]
+  },
+  {
+    key:'flint', name:'打火石', need:35, sub:'点亮下界之门',
+    grid:[
+      '........',
+      '..s2....',
+      '.s1s1.i1',
+      's1s1s1i1',
+      '.s1s1i1i',
+      '..s2i1i1',
+      '....i1i1',
+      '........'
+    ]
+  },
+  {
+    key:'nether', name:'下界岩', need:40, sub:'进入下界',
+    grid:[
+      'n2n1n2n3n1n2n1n2',
+      'n1n3n1n2n2n1n2n1',
+      'n2n1n2n1n3n2n1n3',
+      'n3n2n1n2n1n2n3n1',
+      'n1n2n3n1n2n3n1n2',
+      'n2n1n2n2n3n1n2n1',
+      'n1n3n1n2n1n2n3n2',
+      'n2n1n3n1n2n1n2n1'
+    ]
+  },
+  {
+    key:'witch', name:'女巫', need:45, sub:'打败女巫',
+    grid:[
+      '...p2...',
+      '..p2p2..',
+      '.p2p2p2.',
+      'p2p2p2p2',
+      '..p4p4..',
+      '..bkwh..',
+      '..p4p4..',
+      '...p4...'
+    ]
+  },
+  {
+    key:'dragon_egg', name:'末影龙蛋', need:50, sub:'征服末地',
+    grid:[
+      '........',
+      '...o1...',
+      '..o1o3..',
+      '.o1o3o1o',
+      '.o3o1o3o',
+      '.o1o3o1o',
+      '..o3o1o3',
+      '.o3..o3.'
+    ]
+  },
+  {
+    key:'dragon', name:'末影龙', need:55, sub:'终局挑战',
+    grid:[
+      'bk..bk..',
+      'bk..bk..',
+      'bkp3bkp3',
+      '.bkp3p3p',
+      '..p3p4p3',
+      '...p4p4.',
+      '..p4..p4',
+      '.bk....b'
+    ]
+  }
+];
+
+/* 把网格渲染成 DOM：'.' 单字符=透明，其余为两字符色键（如 g2 / d1） */
+function renderPixel(grid, size){
+  const rows = grid.length;
+  const tokens = grid.map(r => {
+    const t = [];
+    for(let i = 0; i < r.length;){
+      if(r[i] === '.'){ t.push('.'); i += 1; }
+      else { t.push(r.substr(i, 2)); i += 2; }
+    }
+    return t;
+  });
+  const cols = Math.max(...tokens.map(r=>r.length));
+  const box = document.createElement('div');
+  box.className = 'px';
+  box.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  box.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      const ch = tokens[y][x] || '.';
+      const cell = document.createElement('div');
+      if(ch !== '.' && PAL[ch]){
+        cell.style.background = PAL[ch];
+      } else {
+        cell.style.background = 'transparent';
+      }
+      box.appendChild(cell);
+    }
+  }
+  return box;
+}
+
+/* 打卡次数统计（以"完成一组全部训练"记为一次打卡） */
+function totalCheckins(){
+  let n = 0;
+  Object.values(DB.records).forEach(r=>{
+    if(r.logs) n += r.logs.filter(l => l.full).length;
+  });
+  return n;
+}
+
+function unlockedCount(){
+  const n = totalCheckins();
+  return ACHIEVEMENTS.filter(a => n >= a.need).length;
+}
+
+function renderAchievements(){
+  const n = totalCheckins();
+  const grid = document.getElementById('achGrid');
+  grid.innerHTML = '';
+  let unlocked = 0;
+
+  ACHIEVEMENTS.forEach(a=>{
+    const isOn = n >= a.need;
+    if(isOn) unlocked++;
+    const item = document.createElement('div');
+    item.className = 'ach-item ' + (isOn ? 'unlocked' : 'locked');
+    item.title = isOn ? `${a.name} · 已解锁` : `${a.name} · 还差 ${a.need - n} 次`;
+
+    const iconBox = document.createElement('div');
+    iconBox.className = 'ach-icon-box';
+    iconBox.appendChild(renderPixel(a.grid));
+    item.appendChild(iconBox);
+
+    const nm = document.createElement('div');
+    nm.className = 'ach-name';
+    nm.textContent = a.name;
+    item.appendChild(nm);
+
+    const rq = document.createElement('div');
+    rq.className = 'ach-req';
+    rq.textContent = isOn ? '已点亮' : `${a.need} 次`;
+    item.appendChild(rq);
+
+    item.onclick = () => {
+      if(isOn) showAchInfo(a);
+      else toast(`再坚持 ${a.need - n} 次就能点亮「${a.name}」`);
+    };
+    grid.appendChild(item);
+  });
+
+  document.getElementById('achCount').textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
+
+  // 进度条：指向下一个未解锁成就
+  const next = ACHIEVEMENTS.find(a => n < a.need);
+  const bar = document.getElementById('achProgressBar');
+  const txt = document.getElementById('achProgressText');
+  if(!next){
+    bar.style.width = '100%';
+    txt.textContent = '🏆 全部成就已点亮，你已是方块大师！';
+  } else {
+    const prevNeed = a_prevNeed(next);
+    const span = next.need - prevNeed;
+    const got = n - prevNeed;
+    bar.style.width = `${Math.max(0, Math.min(100, (got / span) * 100))}%`;
+    txt.textContent = `再打卡 ${next.need - n} 次，点亮「${next.name}」`;
+  }
+}
+
+function a_prevNeed(ach){
+  const idx = ACHIEVEMENTS.indexOf(ach);
+  return idx > 0 ? ACHIEVEMENTS[idx-1].need : 0;
+}
+
+function showAchInfo(a){
+  achQueue = [];
+  document.getElementById('achPopIcon').innerHTML = '';
+  document.getElementById('achPopIcon').appendChild(renderPixel(a.grid));
+  document.getElementById('achPopName').textContent = a.name;
+  document.getElementById('achPopDesc').textContent = a.sub;
+  const ok = document.getElementById('achPopOk');
+  ok.textContent = '知道了';
+  ok.onclick = () => {
+    document.getElementById('achPop').classList.remove('show');
+    ok.onclick = null;
+  };
+  document.getElementById('achPop').classList.add('show');
+}
+
+/* 完成训练后检查是否有新成就 */
+function checkNewAchievements(beforeCount){
+  const after = totalCheckins();
+  const newly = ACHIEVEMENTS.filter(a => beforeCount < a.need && after >= a.need);
+  if(!newly.length) return;
+  showAchUnlock(newly, 0);
+}
+
+let achQueue = [];
+let pendingAch = null;
+function showAchUnlock(list, i){
+  if(i === 0) achQueue = list.slice();
+  if(i >= achQueue.length) return;
+  const a = achQueue[i];
+  document.getElementById('achPopIcon').innerHTML = '';
+  document.getElementById('achPopIcon').appendChild(renderPixel(a.grid));
+  document.getElementById('achPopName').textContent = a.name;
+  document.getElementById('achPopDesc').innerHTML = `${a.sub}<br>第 <b>${totalCheckins()}</b> 次打卡达成`;
+  document.getElementById('achPopOk').textContent = i < achQueue.length - 1 ? '下一个 ✦' : '收下了 ✦';
+  document.getElementById('achPop').classList.add('show');
+  speak(`成就解锁，${a.name}！`, {rate:1, pitch:1.2});
+  vibrate([100,60,100,60,200]);
+  const ok = document.getElementById('achPopOk');
+  ok.onclick = () => {
+    document.getElementById('achPop').classList.remove('show');
+    const next = i + 1;
+    if(next >= achQueue.length){
+      achQueue = [];
+      ok.onclick = null;
+    } else {
+      setTimeout(()=>showAchUnlock(achQueue, next), 320);
+    }
+  };
+}
+
+/* ===================== 日历 ===================== */
+let calCursor = new Date();
+calCursor.setDate(1);
+
+function renderCalendar(){
+  const y = calCursor.getFullYear(), m = calCursor.getMonth();
+  document.getElementById('calMonth').textContent = `${y}年${m+1}月`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['日','一','二','三','四','五','六'].forEach(d=>{
+    const el = document.createElement('div');
+    el.className = 'cal-dow'; el.textContent = d; grid.appendChild(el);
+  });
+  const firstDow = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const today = todayStr();
+
+  for(let i=0;i<firstDow;i++){
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty'; grid.appendChild(el);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-cell';
+    el.textContent = d;
+    const rec = DB.records[key];
+    if(rec && rec.logs && rec.logs.length){
+      el.classList.add('checked');
+      const full = rec.logs.some(l => l.full);
+      if(full) el.classList.add('perfect');
+      el.title = `${rec.logs.length} 次训练，共 ${rec.totalSec} 秒`;
+    }
+    if(key === today) el.classList.add('today');
+    grid.appendChild(el);
+  }
+}
+
+function renderStats(){
+  const y = calCursor.getFullYear(), m = calCursor.getMonth();
+  let monthDays = 0, totalSec = 0;
+  const days = new Date(y, m+1, 0).getDate();
+  for(let d=1; d<=days; d++){
+    const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const rec = DB.records[key];
+    if(rec && rec.logs && rec.logs.length){ monthDays++; totalSec += rec.totalSec || 0; }
+  }
+  // 累计全部
+  let allSec = 0;
+  Object.values(DB.records).forEach(r=>{ allSec += (r.totalSec || 0); });
+
+  // 连续打卡
+  let streak = 0;
+  const cur = new Date();
+  // 若今天没打，从昨天开始算
+  const hasToday = !!DB.records[todayStr()];
+  if(!hasToday) cur.setDate(cur.getDate() - 1);
+  while(true){
+    const key = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}-${String(cur.getDate()).padStart(2,'0')}`;
+    const r = DB.records[key];
+    if(r && r.logs && r.logs.length){ streak++; cur.setDate(cur.getDate()-1); }
+    else break;
+  }
+  document.getElementById('statStreak').textContent = streak;
+  document.getElementById('statDays').textContent = monthDays;
+  document.getElementById('statTotal').textContent = allSec;
+}
+
+function renderLogs(){
+  const list = document.getElementById('logList');
+  const rec = DB.records[todayStr()];
+  list.innerHTML = '';
+  if(!rec || !rec.logs.length){
+    list.innerHTML = `<div class="empty-tip">今天还没有训练记录<br>说一声「开始」，记录第一组吧 💪</div>`;
+    return;
+  }
+  rec.logs.slice().reverse().forEach(l=>{
+    const el = document.createElement('div');
+    el.className = 'log-item';
+    el.innerHTML = `<div class="log-time">${l.t}</div>
+      <div class="log-desc">${l.sets} 组 × ${l.hold} 秒 · 共 ${l.total} 秒</div>
+      <div class="log-badge">${l.full ? '全完成' : '部分'}</div>`;
+    list.appendChild(el);
+  });
+}
+
+/* ===================== 语音设置面板 ===================== */
+function renderVoicePick(){
+  const box = document.getElementById('voicePick');
+  if(!box) return;
+  box.innerHTML = '';
+  if(!voices.length){
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = '无可用音色'; b.disabled = true;
+    box.appendChild(b); return;
+  }
+  voices.slice(0,4).forEach(v=>{
+    const b = document.createElement('button');
+    b.className = 'btn' + (DB.voiceName === v.name ? ' sel' : '');
+    b.textContent = (v.name||'默认').replace(/Microsoft|Google|TTS|语音/g,'').trim().slice(0,10) || '默认';
+    b.onclick = () => { DB.voiceName = v.name; saveData(); renderVoicePick(); speak('你好，我是你的训练小助手'); };
+    box.appendChild(b);
+  });
+}
+
+/* ===================== 事件绑定 ===================== */
+document.getElementById('startBtn').onclick = async () => {
+  await startTraining();
+};
+document.getElementById('nextBtn').onclick = () => {
+  if(mode === 'awaiting') startCountdownNext();
+};
+document.getElementById('stopBtn').onclick = () => stopTraining('手动停止');
+
+['inpHold','inpSets','inpRest'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('change', readPlan);
+  el.addEventListener('blur', readPlan);
+});
+
+/* 点击语音条：重新聆听（iOS 单次识别后需手动唤醒） */
+document.getElementById('voiceBar').onclick = async (e) => {
+  if(e.target.id === 'voiceToggle') return;
+  if(!DB.voiceOn) return;
+  if(mode === 'hold' || mode === 'rest') return;
+  if(recognizing){ try{ recognition.abort(); }catch(err){} }
+  const mic = await requestMic();
+  if(!mic.ok){
+    if(mic.reason === 'insecure') setVoiceText('⚠️ http 页面无法录音，请用 https 打开');
+    else setVoiceText('⚠️ 麦克风未授权，请在系统设置中允许');
+    return;
+  }
+  if(startListening()) setVoiceText('正在听… 说「<b>开始</b>」启动计时');
+};
+
+document.getElementById('voiceToggle').onclick = function(){
+  DB.voiceOn = !DB.voiceOn;
+  saveData();
+  this.textContent = DB.voiceOn ? '语音: 开' : '语音: 关';
+  this.classList.toggle('on', DB.voiceOn);
+  if(DB.voiceOn){
+    speak('语音已开启');
+    requestMic().then(mic=>{
+      if(mic.ok){ if(mode !== 'idle') startListening(); }
+      else if(mic.reason === 'insecure'){
+        setVoiceText('⚠️ 当前是 http 页面，iOS 无法使用麦克风；请用 https 打开，或点按钮操作');
+      } else {
+        setVoiceText('⚠️ 麦克风未授权，请到系统设置允许后刷新');
+      }
+    });
+  } else {
+    stopListening();
+    if(synth) synth.cancel();
+  }
+};
+
+document.getElementById('prevMonth').onclick = () => { calCursor.setMonth(calCursor.getMonth()-1); renderCalendar(); renderStats(); };
+document.getElementById('nextMonth').onclick = () => { calCursor.setMonth(calCursor.getMonth()+1); renderCalendar(); renderStats(); };
+
+function renderDiag(){
+  const row = (ok, label, hint) =>
+    `<div style="display:flex;gap:7px;align-items:flex-start">
+       <span style="color:${ok?'var(--accent)':'var(--danger)'};flex:0 0 auto">${ok?'✓':'✕'}</span>
+       <span><span style="color:var(--text)">${label}</span>${ok?'':`<br><span style="font-size:11px;opacity:.85">${hint}</span>`}</span>
+     </div>`;
+  let html = row(SECURE_OK, SECURE_OK ? '连接安全（可录音）' : '非 HTTPS 连接，iOS 禁止录音',
+    '用 https 地址打开，或改用下方按钮操作');
+  html += row(!!SR, SR ? `支持语音识别` : '此浏览器不支持语音识别',
+    IS_IOS ? 'iOS 请升级到最新版 Safari；或改用按钮操作（仍有语音播报）' : '请使用 Chrome / Edge');
+  html += row(!!synth, '支持语音播报', '当前浏览器不支持语音合成');
+  html += row(!micDenied, micDenied ? '麦克风权限被拒' : '麦克风权限正常',
+    'iOS 设置 → Safari → 麦克风 → 允许');
+  html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;opacity:.8">
+    ${IS_IOS?'设备：iOS':'设备：非 iOS'} · ${location.protocol}//${location.host||'本地文件'}</div>`;
+  document.getElementById('diagBox').innerHTML = html;
+}
+
+document.getElementById('settingsBtn').onclick = () => {
+  renderVoicePick();
+  renderDiag();
+  document.getElementById('sheetMask').classList.add('show');
+};
+document.getElementById('btnCloseSheet').onclick = () => document.getElementById('sheetMask').classList.remove('show');
+document.getElementById('sheetMask').onclick = (e) => { if(e.target.id === 'sheetMask') e.currentTarget.classList.remove('show'); };
+document.getElementById('btnTestVoice').onclick = () => speak('你好，我是小小悬挂侠，说开始我们就出发！', {rate: 1});
+
+document.getElementById('celebOk').onclick = () => {
+  document.getElementById('celebrate').classList.remove('show');
+  if(pendingAch){
+    const p = pendingAch; pendingAch = null;
+    setTimeout(()=>checkNewAchievements(p.before), 360);
+  }
+  document.getElementById('startBtn').textContent = '▶ 再练一次';
+  setPhaseCard('', '准备就绪', '等待开始');
+  document.getElementById('timeText').textContent = '0:30';
+  document.getElementById('ringSub').textContent = '等待开始';
+  mode = 'idle';
+  setDisplay(DB.plan.hold, DB.plan.hold, '秒');
+};
+
+/* 调试/测试钩子：模拟一条语音指令 */
+window.__voice = handleVoiceCommand;
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+/* 防止移动端双击缩放 */
+document.addEventListener('dblclick', e => e.preventDefault(), {passive:false});
+
+/* ===================== 初始化 ===================== */
+(function init(){
+  // 恢复计划
+  document.getElementById('inpHold').value = DB.plan.hold;
+  document.getElementById('inpSets').value = DB.plan.sets;
+  document.getElementById('inpRest').value = DB.plan.rest;
+  renderPlanSummary();
+
+  const vt = document.getElementById('voiceToggle');
+  vt.textContent = DB.voiceOn ? '语音: 开' : '语音: 关';
+  vt.classList.toggle('on', DB.voiceOn);
+
+  mode = 'idle';
+  setDisplay(DB.plan.hold, DB.plan.hold, '秒');
+  setPhaseCard('', '准备就绪', '等待开始');
+  renderSets();
+  renderCalendar();
+  renderStats();
+  renderLogs();
+  renderAchievements();
+
+  if(!SR){
+    if(!SECURE_OK){
+      setVoiceText('⚠️ 当前是 <b>http</b> 页面，iOS/安卓均无法使用麦克风。请用 https 打开，或直接点按钮操作');
+    } else if(IS_IOS){
+      setVoiceText('本浏览器不支持语音识别，点「开始训练」后按提示按钮操作，仍会语音播报 ✓');
+    } else {
+      setVoiceText('当前浏览器不支持语音识别，建议用 Chrome / Edge 打开；也可用按钮操作');
+    }
+  } else if(IS_IOS && !SECURE_OK){
+    setVoiceText('⚠️ 当前是 <b>http</b> 页面，iOS 无法调用麦克风。请用 https 打开');
+  }
+
+  // iOS 需要用户手势后才能播放音频/启动识别，首次点击预热语音引擎
+  const warm = () => {
+    if(synth && voices.length === 0) loadVoices();
+    // iOS 必须在一次用户手势内真正调用一次 speak 才能解锁
+    if(synth){
+      try{
+        const u = new SpeechSynthesisUtterance(' ');
+        u.volume = 0;
+        synth.speak(u);
+      }catch(err){}
+    }
+  };
+  document.body.addEventListener('touchstart', warm, {once:true, passive:true});
+  document.body.addEventListener('click', warm, {once:true});
+})();
+</script>
+</body>
+</html>
