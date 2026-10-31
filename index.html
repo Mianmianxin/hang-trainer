@@ -567,6 +567,7 @@ let wantListening = false;
 let restartTimer = null;
 let micDenied = false;
 let restartFails = 0;
+let lastStartAt = 0;
 
 /* 语音播报：播报期间暂停识别，避免音频通道冲突导致识别永久失效 */
 let speakingCount = 0;
@@ -655,20 +656,20 @@ function initRecognition(){
     updateVoiceUI();
     if(!wantListening) return;
     // 自动重启（浏览器静默后会自动断开，必须持续拉起重连）
-    clearTimeout(restartTimer);
-    const delay = IS_IOS ? 260 : 180;
+    // 用 restartTimer 做互斥：已有待执行的重连就不再叠加
+    if(restartTimer) return;
+    const delay = IS_IOS ? 320 : 200;
     restartTimer = setTimeout(() => {
+      restartTimer = null;
       if(!wantListening) return;
       try{
         r.start();
       }catch(e){
         restartFails++;
-        // 重试若干次失败后，提示用户手动点一下
-        if(restartFails >= 3 && mode === 'awaiting'){
+        if(restartFails >= 3 && (mode === 'awaiting' || mode === 'idle')){
           setVoiceText('语音连接中断，<b>点这里</b>重新开始聆听，或点下方按钮');
+          wantListening = false;
         }
-        clearTimeout(restartTimer);
-        restartTimer = setTimeout(()=>{ if(wantListening){ try{ r.start(); }catch(err){} } }, 700);
       }
     }, delay);
   };
@@ -694,6 +695,9 @@ function initRecognition(){
           if(wantListening){ try{ r.start(); }catch(err){} }
         }, 600);
       }
+    }
+    if(e.error === 'not-allowed' && wantListening){
+      wantListening = false;
     }
   };
   r.onresult = (ev) => {
@@ -744,7 +748,7 @@ function updateVoiceUI(){
   }
 }
 
-function startListening(){
+function startListening(retry = true){
   if(!SR){
     if(!SECURE_OK){
       setVoiceText('⚠️ 当前是 <b>http</b> 页面，无法使用麦克风。请用 https 打开，或用下方按钮操作');
@@ -757,17 +761,44 @@ function startListening(){
   }
   if(!recognition) recognition = initRecognition();
   if(!recognition) return false;
+
   wantListening = true;
-  try{ recognition.start(); }catch(e){ /* 已在运行 */ }
-  return true;
+  // 节流：300ms 内重复调用直接忽略，避免多个入口同时 start 造成 InvalidStateError
+  const now = Date.now();
+  if(now - lastStartAt < 300 && recognizing) return true;
+  lastStartAt = now;
+  try{
+    recognition.start();
+    return true;
+  }catch(err){
+    // InvalidStateError：实例卡在非空闲状态，必须重建
+    if(retry){
+      try{ recognition.abort(); }catch(e){}
+      recognition = initRecognition();
+      setTimeout(()=>{
+        if(mode === 'awaiting' && wantListening){
+          try{ recognition.start(); }catch(e2){
+            setVoiceText('⚠️ 语音未启动：<b>点这里</b>重试，或点下方按钮开始');
+          }
+        }
+      }, 500);
+      return true;
+    }
+    setVoiceText('⚠️ 语音未启动：<b>点这里</b>重试，或点下方按钮开始');
+    return false;
+  }
 }
 
-function stopListening(){
+function stopListening(hard){
   wantListening = false;
+  resumeAfterSpeak = false;
   clearTimeout(restartTimer);
+  restartFails = 0;
   if(recognition){ try{ recognition.abort(); }catch(e){} }
   recognizing = false;
   updateVoiceUI();
+  // hard=true 时销毁实例，下次 startListening 会重新创建（用于停止训练后的彻底复位）
+  if(hard){ recognition = null; }
 }
 
 /* ===================== 计时状态机 ===================== */
@@ -958,7 +989,12 @@ async function startTraining(){
   // 训练全程保持屏幕常亮
   requestWakeLock();
 
-  if(mic.ok) startListening();
+  if(mic.ok){
+    // 每次开始都用全新实例，避免上一次的异常状态残留
+    recognition = null;
+    restartFails = 0;
+    startListening();
+  }
 
   // iOS 单次识别，说完会停：准备下一组时提示可点语音条重新聆听
   if(SR && mic.ok && IS_IOS) setTimeout(()=>{
@@ -1043,7 +1079,7 @@ function onHoldEnd(){
   }
 }
 
-function toAwaitNext(){
+function toAwaitNext(delay){
   clearTick();
   mode = 'awaiting';
   setPhaseCard('', '准备下一组', `说「开始」启动第 ${currentSet + 1} 组`);
@@ -1051,27 +1087,38 @@ function toAwaitNext(){
   setVoiceText(`说「<b>开始</b>」启动第 ${currentSet + 1} 组`);
   renderSets();
   showBtns('await');
-  // 进入等待状态：让语音播报先说完，再重新拉起识别
+
+  // 等语音播报结束后再拉起识别（播报中抢麦克风会导致识别永久失效）
   if(DB.voiceOn){
-    setTimeout(()=>{
-      if(mode !== 'awaiting') return;
+    const wait = typeof delay === 'number' ? delay : 700;
+    const tryStart = (attempt = 0) => {
+      if(mode !== 'awaiting' || !DB.voiceOn) return;
+      // 还在播报就继续等
+      if(synth && synth.speaking && attempt < 20){
+        setTimeout(()=>tryStart(attempt + 1), 350);
+        return;
+      }
       if(!recognizing) startListening();
-    }, 700);
+    };
+    setTimeout(()=>tryStart(), wait);
   }
 }
 
 function skipRest(){
   if(mode !== 'rest') return;
   clearTick();
-  toAwaitNext();
+  mode = 'awaiting';
   speak('准备下一组', {rate: 1.05});
+  toAwaitNext(800);
 }
 
 function onRestEnd(){
   clearTick();
-  speak('休息结束，准备下一组', {rate: 1});
+  // 先切到等待状态，再播报；否则 speak 内部判断 mode 时仍是 rest，播完不会恢复识别
+  mode = 'awaiting';
   vibrate([120, 80, 120]);
-  toAwaitNext();
+  speak('休息结束，准备下一组', {rate: 1});
+  toAwaitNext(900);   // 播报约 2 秒，延后拉起识别，避免抢音频通道
 }
 
 function finishTraining(){
@@ -1123,7 +1170,7 @@ function stopTraining(reason){
   clearTick();
   mode = 'idle';
   currentSet = 0;
-  stopListening();
+  stopListening(true);   // 彻底销毁识别实例，避免下次 start 抛 InvalidStateError
   releaseWakeLock();
   setPhaseCard('', '准备就绪', '等待开始');
   document.getElementById('timeText').textContent = '0:30';
