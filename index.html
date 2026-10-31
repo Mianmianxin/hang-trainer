@@ -568,6 +568,9 @@ let restartTimer = null;
 let micDenied = false;
 let restartFails = 0;
 let lastStartAt = 0;
+let lastAliveAt = 0;
+let lastErr = '';
+let reconnecting = false;
 
 /* 语音播报：播报期间暂停识别，避免音频通道冲突导致识别永久失效 */
 let speakingCount = 0;
@@ -648,6 +651,58 @@ function releaseMic(){
   }
 }
 
+/* ============ 重建式重连 + 心跳自愈 ============ */
+
+/* 销毁旧实例并新建（iOS 上复用旧实例不可靠） */
+function freshRecognition(){
+  if(recognition){
+    const old = recognition;
+    recognition = null;
+    try{ old.onend = null; old.onresult = null; old.onerror = null; old.abort(); }catch(e){}
+  }
+  recognition = initRecognition();
+  return recognition;
+}
+
+/* 统一重连入口：带互斥与退避 */
+function scheduleReconnect(delay){
+  if(!wantListening || reconnecting) return;
+  reconnecting = true;
+  clearTimeout(restartTimer);
+  restartTimer = setTimeout(() => {
+    restartTimer = null;
+    reconnecting = false;
+    if(!wantListening) return;
+    const inst = freshRecognition();
+    try{
+      lastStartAt = Date.now();
+      inst.start();
+    }catch(e){
+      restartFails++;
+      if(restartFails < 5){
+        scheduleReconnect(400 + restartFails * 350);
+      } else {
+        setVoiceText('语音连接中断，<b>点这里</b>重新聆听，或点下方按钮');
+      }
+    }
+  }, delay);
+}
+
+/* 心跳：每 2.5s 检查「声称在听但实际已死」的识别，强制重建 */
+setInterval(() => {
+  if(!wantListening) return;
+  const silentFor = Date.now() - lastAliveAt;
+  // 声称在听（recognizing=true）但 6 秒无任何活动事件 → 实例已僵死
+  if(recognizing && silentFor > 6000){
+    scheduleReconnect(100);
+    return;
+  }
+  // 想听但既不在听也没有重连计划 → 被遗漏，补一次
+  if(!recognizing && !restartTimer && !reconnecting){
+    scheduleReconnect(100);
+  }
+}, 2500);
+
 function initRecognition(){
   if(!SR) return null;
   const r = new SR();
@@ -660,32 +715,22 @@ function initRecognition(){
   r.onstart = () => {
     recognizing = true;
     restartFails = 0;
+    lastAliveAt = Date.now();
     updateVoiceUI();
   };
+  r.onaudiostart = () => { lastAliveAt = Date.now(); };
+  r.onspeechstart = () => { lastAliveAt = Date.now(); };
+  r.onresult = origOnResult;
   r.onend = () => {
     recognizing = false;
     updateVoiceUI();
     if(!wantListening) return;
-    // 自动重启（浏览器静默后会自动断开，必须持续拉起重连）
-    // 用 restartTimer 做互斥：已有待执行的重连就不再叠加
-    if(restartTimer) return;
-    const delay = IS_IOS ? 320 : 200;
-    restartTimer = setTimeout(() => {
-      restartTimer = null;
-      if(!wantListening) return;
-      try{
-        r.start();
-      }catch(e){
-        restartFails++;
-        if(restartFails >= 3 && (mode === 'awaiting' || mode === 'idle')){
-          setVoiceText('语音连接中断，<b>点这里</b>重新开始聆听，或点下方按钮');
-          wantListening = false;
-        }
-      }
-    }, delay);
+    // iOS 上复用旧实例经常失败，一律销毁重建（这是可靠性的关键）
+    scheduleReconnect(320);
   };
   r.onerror = (e) => {
     recognizing = false;
+    lastErr = e.error;
     updateVoiceUI();
     if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
       wantListening = false;
@@ -696,30 +741,23 @@ function initRecognition(){
       }
       document.getElementById('voiceToggle').classList.remove('on');
       document.getElementById('voiceToggle').textContent = '语音: 关';
+      return;
     }
-    // no-speech 属正常（用户没说话），保持监听即可；
-    // audio-capture / network / aborted 需要主动重连
-    if(e.error === 'audio-capture' || e.error === 'network' || e.error === 'aborted'){
-      if(wantListening && !restartTimer){
-        restartTimer = setTimeout(()=>{
-          restartTimer = null;
-          if(wantListening){ try{ r.start(); }catch(err){} }
-        }, 600);
-      }
-    }
-    if(e.error === 'not-allowed' && wantListening){
-      wantListening = false;
-    }
-  };
-  r.onresult = (ev) => {
-    let text = '';
-    for(let i = ev.resultIndex; i < ev.results.length; i++){
-      text += ev.results[i][0].transcript;
-    }
-    const norm = text.replace(/[\s，。！？、,\.!\?]/g,'');
-    handleVoiceCommand(norm);
+    // 其余错误（no-speech/audio-capture/network/aborted 等）统一走重建重连
+    if(wantListening){ scheduleReconnect(500); }
   };
   return r;
+}
+
+/* 识别结果处理（重建实例后也要挂载） */
+function origOnResult(ev){
+  lastAliveAt = Date.now();
+  let text = '';
+  for(let i = ev.resultIndex; i < ev.results.length; i++){
+    text += ev.results[i][0].transcript;
+  }
+  const norm = text.replace(/[\s，。！？、,\.!\?]/g,'');
+  handleVoiceCommand(norm);
 }
 
 const KEY_ANY        = /(开始|准备|计时|走起|起来|预备|action|start|go)/i;
@@ -770,45 +808,22 @@ function startListening(retry = true){
     }
     return false;
   }
-  if(!recognition) recognition = initRecognition();
-  if(!recognition) return false;
 
   wantListening = true;
-  // 节流：500ms 内有启动动作就跳过（含正在退避重试的情况），避免多入口重复 start
   const now = Date.now();
-  if(now - lastStartAt < 500) return true;
+  if(now - lastStartAt < 400) return true;
   lastStartAt = now;
+
+  // 有旧实例先销毁（iOS 复用旧实例不可靠）
+  if(!recognition) recognition = initRecognition();
 
   try{
     recognition.start();
     return true;
   }catch(err){
-    // iPad Safari：abort 后短时间内无法重新 start，需要「重建实例 + 指数退避」
-    if(retry){
-      try{ recognition.abort(); }catch(e){}
-      recognition = initRecognition();
-      const backoff = [420, 700, 1100, 1600];
-      let retryDone = false;
-      const attemptStart = (i = 0) => {
-        if(retryDone || !wantListening || mode !== 'awaiting') return;
-        if(recognizing){ retryDone = true; return; }
-        try{
-          lastStartAt = Date.now();
-          recognition.start();
-          retryDone = true;          // 成功即停止后续重试
-        }catch(e2){
-          if(i < backoff.length){
-            setTimeout(()=>attemptStart(i + 1), backoff[i]);
-          } else {
-            setVoiceText('⚠️ 语音未启动：<b>点这里</b>重试，或点下方按钮开始');
-          }
-        }
-      };
-      setTimeout(()=>attemptStart(0), backoff[0]);
-      return true;
-    }
-    setVoiceText('⚠️ 语音未启动：<b>点这里</b>重试，或点下方按钮开始');
-    return false;
+    // 抛错就重建重试（含 Safari 冷却期）
+    scheduleReconnect(450);
+    return true;
   }
 }
 
@@ -817,17 +832,14 @@ function stopListening(hard){
   resumeAfterSpeak = false;
   clearTimeout(restartTimer);
   restartTimer = null;
+  reconnecting = false;
   restartFails = 0;
-  const inst = recognition;
-  if(inst){
-    try{ inst.abort(); }catch(e){}
-    // iPad Safari 需要时间真正释放音频会话，稍后再丢弃引用
-    if(hard){
-      setTimeout(()=>{ if(recognition === inst) recognition = null; }, 600);
-    }
+  if(recognition){
+    try{ recognition.onend = null; recognition.abort(); }catch(e){}
   }
   recognizing = false;
   updateVoiceUI();
+  if(hard){ recognition = null; }
 }
 
 /* ===================== 计时状态机 ===================== */
@@ -1005,8 +1017,7 @@ async function startTraining(){
 
   if(canVoice){
     // 每次都重建实例，清除上一次会话残留状态
-    if(recognition){ try{ recognition.abort(); }catch(e){} }
-    recognition = initRecognition();
+    freshRecognition();
     restartFails = 0;
     lastStartAt = 0;
     // 同步调用，不 await，保住用户手势
@@ -1762,8 +1773,9 @@ function renderDiag(){
   html += row(!!synth, '支持语音播报', '当前浏览器不支持语音合成');
   html += row(!micDenied, micDenied ? '麦克风权限被拒' : '麦克风权限正常',
     'iOS 设置 → Safari → 麦克风 → 允许');
+  const st = typeof recognition !== 'undefined' && recognition ? (recognizing ? '聆听中' : '已停') : '未创建';
   html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;opacity:.8">
-    ${IS_IOS?'设备：iOS':'设备：非 iOS'} · ${location.protocol}//${location.host||'本地文件'}</div>`;
+    识别状态：${st}${lastErr?` · 最近错误：${lastErr}`:''} · 重试：${restartFails}次 · ${IS_IOS?'iOS':'非 iOS'}</div>`;
   document.getElementById('diagBox').innerHTML = html;
 }
 
