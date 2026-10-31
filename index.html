@@ -576,14 +576,9 @@ let resumeAfterSpeak = false;
 function speak(text, {rate=1, pitch=1, interrupt=true, resume=true} = {}){
   if(!DB.voiceOn || !synth) return;
 
-  // 播报前让出音频通道
-  if(wantListening && recognizing){
-    resumeAfterSpeak = true;
-    wantListening = false;
-    clearTimeout(restartTimer);
-    try{ recognition && recognition.abort(); }catch(e){}
-    recognizing = false;
-  }
+  // iPad Safari：不要为了播报去 abort 识别——abort 会摧毁音频会话，
+  // 导致之后再也拿不到麦克风（这正是"第二次开始没反应"的根源之一）。
+  // 播报与识别可以共存，仅在识别未启动时才补充拉起。
 
   try{
     if(interrupt) synth.cancel();
@@ -598,11 +593,9 @@ function speak(text, {rate=1, pitch=1, interrupt=true, resume=true} = {}){
     speakingCount++;
     const done = () => {
       speakingCount = Math.max(0, speakingCount - 1);
-      if(speakingCount === 0 && resumeAfterSpeak){
-        resumeAfterSpeak = false;
-        if(resume && DB.voiceOn && (mode === 'awaiting' || mode === 'idle') && !recognizing){
-          setTimeout(()=>{ if(!recognizing) startListening(); }, 320);
-        }
+      if(speakingCount === 0 && resume && DB.voiceOn &&
+         (mode === 'awaiting' || mode === 'idle') && !recognizing && !restartTimer){
+        setTimeout(()=>{ if(!recognizing && !restartTimer) startListening(); }, 350);
       }
     };
     u.onend = done;
@@ -621,19 +614,37 @@ const IOS_RECOG_LIMITED = IS_IOS;   // iOS 上语音识别不可靠，走"确认
 const SR = (IS_IOS && !SECURE_OK) ? null : (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 /* 主动申请麦克风权限（iOS 必须先 getUserMedia 才能弹权限框） */
+/* 保持一个常开的麦克风流。
+   iPad Safari 上如果 stop() 掉音频轨道，音频会话会被关闭，
+   后续 SpeechRecognition 就再也拿不到麦克风（权限还在，但通道死了）。 */
+let micStream = null;
+
 async function requestMic(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     if(!SECURE_OK) return {ok:false, reason:'insecure'};
     return {ok:false, reason:'unsupported'};
   }
+  // 已有活动轨道则直接复用，绝不重复申请（避免关闭会话）
+  if(micStream && micStream.getAudioTracks().some(t => t.readyState === 'live')){
+    return {ok:true, reused:true};
+  }
   try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    stream.getTracks().forEach(t => t.stop());   // 只申请权限，立刻释放
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+    });
     micDenied = false;
     return {ok:true};
   }catch(err){
     micDenied = true;
     return {ok:false, reason: err && err.name === 'NotAllowedError' ? 'denied' : 'error', err};
+  }
+}
+
+/* 训练结束时才真正释放麦克风 */
+function releaseMic(){
+  if(micStream){
+    try{ micStream.getTracks().forEach(t => t.stop()); }catch(e){}
+    micStream = null;
   }
 }
 
@@ -1199,7 +1210,8 @@ function finishTraining(){
   renderLogs();
   renderStats();
   renderAchievements();
-  stopListening();
+  stopListening(true);
+  releaseMic();
   releaseWakeLock();
   showBtns('start');
   document.getElementById('planCard').style.opacity = '1';
@@ -1211,7 +1223,7 @@ function stopTraining(reason){
   clearTick();
   mode = 'idle';
   currentSet = 0;
-  stopListening(true);   // 彻底销毁识别实例，避免下次 start 抛 InvalidStateError
+  stopListening(true);   // 销毁识别实例，但保留麦克风流（不释放音频会话）
   releaseWakeLock();
   setPhaseCard('', '准备就绪', '等待开始');
   document.getElementById('timeText').textContent = '0:30';
