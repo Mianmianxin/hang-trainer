@@ -682,10 +682,11 @@ function scheduleReconnect(delay){
       inst.start();
     }catch(e){
       restartFails++;
-      if(restartFails < 5){
-        scheduleReconnect(400 + restartFails * 350);
-      } else {
-        setVoiceText('语音连接中断，<b>点这里</b>重新聆听，或点下方按钮');
+      /* Safari 冷却期：短间隔连续 start() 会被节流，之后全部抛错。
+         改用指数退避（0.8s→1.6s→…→最长8s），永不放弃 */
+      scheduleReconnect(Math.min(8000, 800 * Math.pow(2, restartFails - 1)));
+      if(restartFails >= 3){
+        setVoiceText('语音信号弱，正在自动重连… 点下方蓝色按钮可直接开始');
       }
     }
   }, delay);
@@ -746,8 +747,8 @@ function initRecognition(){
     recognizing = false;
     updateVoiceUI();
     if(!wantListening) return;
-    // iOS 上复用旧实例经常失败，一律销毁重建（这是可靠性的关键）
-    scheduleReconnect(320);
+    // iOS 上复用旧实例经常失败，一律销毁重建；间隔放慢避免触发 Safari 节流
+    scheduleReconnect(900);
   };
   r.onerror = (e) => {
     recognizing = false;
@@ -765,7 +766,7 @@ function initRecognition(){
       return;
     }
     // 其余错误（no-speech/audio-capture/network/aborted 等）统一走重建重连
-    if(wantListening){ scheduleReconnect(500); }
+    if(wantListening){ scheduleReconnect(900); }
   };
   return r;
 }
@@ -1737,7 +1738,11 @@ document.getElementById('startBtn').onclick = async () => {
   await startTraining();
 };
 document.getElementById('nextBtn').onclick = () => {
-  if(mode === 'awaiting') startCountdownNext();
+  if(mode === 'awaiting'){
+    // 借用户点击手势顺便复活语音（Safari 允许在手势内 start）
+    try{ startListening(); }catch(e){}
+    startCountdownNext();
+  }
 };
 document.getElementById('stopBtn').onclick = () => stopTraining('手动停止');
 
