@@ -570,6 +570,7 @@ let restartFails = 0;
 let lastStartAt = 0;
 let pendingStartAt = 0;
 let lastAliveAt = 0;
+let lastResultAt = 0;   /* 最近一次真正收到识别结果的时间 */
 let lastErr = '';
 let reconnecting = false;
 
@@ -709,6 +710,15 @@ setInterval(() => {
   // C) 想听但既不在听也没有重连计划 → 补一次
   if(!recognizing && !restartTimer && !reconnecting && !pendingStartAt){
     scheduleReconnect(100);
+    return;
+  }
+  // D) 假活：实例在吐音频事件（心跳 A 抓不到），但 12 秒没有任何识别结果
+  //    Safari 常见病：音频会话被占用后识别器"活着却永远不出字"，必须销毁重建
+  if(recognizing && lastResultAt && Date.now() - lastResultAt > 12000 && mode !== 'hold'){
+    restartFails++;
+    lastResultAt = Date.now();   /* 防止本轮重建失败后连发 */
+    scheduleReconnect(100);
+    return;
   }
 }, 2500);
 
@@ -726,6 +736,7 @@ function initRecognition(){
     restartFails = 0;
     pendingStartAt = 0;
     lastAliveAt = Date.now();
+    lastResultAt = Date.now();
     updateVoiceUI();
   };
   r.onaudiostart = () => { lastAliveAt = Date.now(); };
@@ -762,6 +773,7 @@ function initRecognition(){
 /* 识别结果处理（重建实例后也要挂载） */
 function origOnResult(ev){
   lastAliveAt = Date.now();
+  lastResultAt = Date.now();
   let text = '';
   for(let i = ev.resultIndex; i < ev.results.length; i++){
     text += ev.results[i][0].transcript;
@@ -1265,6 +1277,8 @@ function showBtns(which){
   const x = document.getElementById('stopBtn');
   s.classList.toggle('hidden', which !== 'start');
   n.classList.toggle('hidden', which !== 'await');
+  // 等待语音时给兜底按钮加呼吸动画，提示"点这里也能开始"
+  n.classList.toggle('pulse', which === 'await');
   x.classList.toggle('hidden', which === 'start');
 }
 function refreshBtns(){
