@@ -763,25 +763,37 @@ function startListening(retry = true){
   if(!recognition) return false;
 
   wantListening = true;
-  // 节流：300ms 内重复调用直接忽略，避免多个入口同时 start 造成 InvalidStateError
+  // 节流：500ms 内有启动动作就跳过（含正在退避重试的情况），避免多入口重复 start
   const now = Date.now();
-  if(now - lastStartAt < 300 && recognizing) return true;
+  if(now - lastStartAt < 500) return true;
   lastStartAt = now;
+
   try{
     recognition.start();
     return true;
   }catch(err){
-    // InvalidStateError：实例卡在非空闲状态，必须重建
+    // iPad Safari：abort 后短时间内无法重新 start，需要「重建实例 + 指数退避」
     if(retry){
       try{ recognition.abort(); }catch(e){}
       recognition = initRecognition();
-      setTimeout(()=>{
-        if(mode === 'awaiting' && wantListening){
-          try{ recognition.start(); }catch(e2){
+      const backoff = [420, 700, 1100, 1600];
+      let retryDone = false;
+      const attemptStart = (i = 0) => {
+        if(retryDone || !wantListening || mode !== 'awaiting') return;
+        if(recognizing){ retryDone = true; return; }
+        try{
+          lastStartAt = Date.now();
+          recognition.start();
+          retryDone = true;          // 成功即停止后续重试
+        }catch(e2){
+          if(i < backoff.length){
+            setTimeout(()=>attemptStart(i + 1), backoff[i]);
+          } else {
             setVoiceText('⚠️ 语音未启动：<b>点这里</b>重试，或点下方按钮开始');
           }
         }
-      }, 500);
+      };
+      setTimeout(()=>attemptStart(0), backoff[0]);
       return true;
     }
     setVoiceText('⚠️ 语音未启动：<b>点这里</b>重试，或点下方按钮开始');
@@ -793,12 +805,18 @@ function stopListening(hard){
   wantListening = false;
   resumeAfterSpeak = false;
   clearTimeout(restartTimer);
+  restartTimer = null;
   restartFails = 0;
-  if(recognition){ try{ recognition.abort(); }catch(e){} }
+  const inst = recognition;
+  if(inst){
+    try{ inst.abort(); }catch(e){}
+    // iPad Safari 需要时间真正释放音频会话，稍后再丢弃引用
+    if(hard){
+      setTimeout(()=>{ if(recognition === inst) recognition = null; }, 600);
+    }
+  }
   recognizing = false;
   updateVoiceUI();
-  // hard=true 时销毁实例，下次 startListening 会重新创建（用于停止训练后的彻底复位）
-  if(hard){ recognition = null; }
 }
 
 /* ===================== 计时状态机 ===================== */
@@ -969,10 +987,33 @@ async function startTraining(){
   renderSets();
   showBtns('await');
 
-  // 提前申请麦克风（iOS 必须在用户手势里主动申请，否则不会弹出权限框）
+  // iOS Safari 关键约束：语音识别必须在「用户点击」的同一手势内同步启动。
+  // 因此先启动识别，再申请麦克风权限（await 之后手势已失效，Safari 会静默拒绝）。
+  const canVoice = !!(SR && DB.voiceOn);
+  let started = false;
+
+  if(canVoice){
+    // 每次都重建实例，清除上一次会话残留状态
+    if(recognition){ try{ recognition.abort(); }catch(e){} }
+    recognition = initRecognition();
+    restartFails = 0;
+    lastStartAt = 0;
+    // 同步调用，不 await，保住用户手势
+    started = startListening();
+  }
+
+  // 训练全程保持屏幕常亮
+  requestWakeLock();
+
+  // 再申请权限（首次会弹窗；已授权则立即返回）
   let mic = {ok:true};
-  if(SR && DB.voiceOn) mic = await requestMic();
-  if(!mic.ok){
+  if(canVoice){
+    mic = await requestMic();
+  }
+
+  if(!canVoice){
+    setVoiceText('⚠️ 语音不可用，点下方按钮开始（仍有语音播报）');
+  } else if(!mic.ok){
     if(mic.reason === 'insecure'){
       setVoiceText('⚠️ 当前是 <b>http</b> 页面，iOS 无法使用麦克风。请改用 https 打开，或点下方按钮开始');
     } else if(mic.reason === 'denied'){
@@ -984,16 +1025,16 @@ async function startTraining(){
     setVoiceText('正在听… 说「<b>开始</b>」启动计时');
   }
 
-  speak(`准备开始 ${plan.sets} 组悬吊，每组 ${plan.hold} 秒。说开始，就起跳！`, {rate: 1});
+  // 播报放在识别启动之后，且让 speak 不要打断识别（resume 交给这里控制）
+  speak(`准备开始 ${plan.sets} 组悬吊，每组 ${plan.hold} 秒。说开始，就起跳！`, {rate: 1, resume:false});
 
-  // 训练全程保持屏幕常亮
-  requestWakeLock();
-
-  if(mic.ok){
-    // 每次开始都用全新实例，避免上一次的异常状态残留
-    recognition = null;
-    restartFails = 0;
-    startListening();
+  // 若首次权限弹窗期间识别被打断，授权完成后补启一次（仅当确实没在监听）
+  if(canVoice && mic.ok){
+    setTimeout(()=>{
+      if(mode === 'awaiting' && !recognizing && !restartTimer){
+        startListening();
+      }
+    }, 1200);
   }
 
   // iOS 单次识别，说完会停：准备下一组时提示可点语音条重新聆听
