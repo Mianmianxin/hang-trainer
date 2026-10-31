@@ -568,6 +568,7 @@ let restartTimer = null;
 let micDenied = false;
 let restartFails = 0;
 let lastStartAt = 0;
+let pendingStartAt = 0;
 let lastAliveAt = 0;
 let lastErr = '';
 let reconnecting = false;
@@ -676,6 +677,7 @@ function scheduleReconnect(delay){
     const inst = freshRecognition();
     try{
       lastStartAt = Date.now();
+      pendingStartAt = Date.now();
       inst.start();
     }catch(e){
       restartFails++;
@@ -692,13 +694,20 @@ function scheduleReconnect(delay){
 setInterval(() => {
   if(!wantListening) return;
   const silentFor = Date.now() - lastAliveAt;
-  // 声称在听（recognizing=true）但 6 秒无任何活动事件 → 实例已僵死
+  // A) 声称在听（recognizing=true）但 6 秒无任何活动事件 → 实例僵死
   if(recognizing && silentFor > 6000){
+    restartFails++;
     scheduleReconnect(100);
     return;
   }
-  // 想听但既不在听也没有重连计划 → 被遗漏，补一次
-  if(!recognizing && !restartTimer && !reconnecting){
+  // B) start() 调用过、4 秒了还没 onstart，也没在重连 → 隐形僵死（Safari 静默失败）
+  if(!recognizing && pendingStartAt && Date.now() - pendingStartAt > 4000 && !restartTimer && !reconnecting){
+    restartFails++;
+    scheduleReconnect(100);
+    return;
+  }
+  // C) 想听但既不在听也没有重连计划 → 补一次
+  if(!recognizing && !restartTimer && !reconnecting && !pendingStartAt){
     scheduleReconnect(100);
   }
 }, 2500);
@@ -715,6 +724,7 @@ function initRecognition(){
   r.onstart = () => {
     recognizing = true;
     restartFails = 0;
+    pendingStartAt = 0;
     lastAliveAt = Date.now();
     updateVoiceUI();
   };
@@ -818,10 +828,12 @@ function startListening(retry = true){
   if(!recognition) recognition = initRecognition();
 
   try{
+    pendingStartAt = Date.now();
     recognition.start();
     return true;
   }catch(err){
     // 抛错就重建重试（含 Safari 冷却期）
+    pendingStartAt = 0;
     scheduleReconnect(450);
     return true;
   }
