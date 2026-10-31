@@ -99,6 +99,11 @@
     letter-spacing:.5px;position:relative;
   }
   .timer-card.rest .phase-tag{background:rgba(255,176,32,.14);color:var(--warn);}
+  .keepawake-tag{
+    display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;
+    padding:4px 9px;border-radius:999px;background:rgba(255,211,77,.13);
+    color:#ffd34d;margin-left:8px;letter-spacing:.3px;vertical-align:middle;
+  }
   .timer-card.done .phase-tag{background:rgba(75,163,255,.16);color:var(--accent2);}
 
   .ring-wrap{position:relative;width:230px;height:230px;margin:16px auto 10px;}
@@ -373,6 +378,7 @@
   <!-- 计时器 -->
   <div class="card timer-card" id="timerCard">
     <span class="phase-tag" id="phaseTag">准备就绪</span>
+    <span class="keepawake-tag hidden" id="keepAwakeTag" title="训练期间屏幕不会自动息屏">☀ 屏幕常亮中</span>
 
     <div class="ring-wrap">
       <svg width="230" height="230" viewBox="0 0 230 230">
@@ -491,6 +497,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* ===================== 环境检测 ===================== */
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_HTTPS = location.protocol === 'https:' || location.protocol === 'file:' ||
+  location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const SECURE_OK = (typeof window.isSecureContext === 'boolean') ? window.isSecureContext : IS_HTTPS;
+
 /* ===================== 数据层 ===================== */
 const STORE_KEY = 'hang_trainer_v1';
 const todayStr = () => {
@@ -547,8 +560,30 @@ function pickVoice(){
   return prefer || voices.find(v=>/zh-CN/i.test(v.lang)) || voices[0];
 }
 
-function speak(text, {rate=1, pitch=1, interrupt=true} = {}){
+/* 语音识别状态（需在使用前声明，避免 TDZ） */
+let recognition = null;
+let recognizing = false;
+let wantListening = false;
+let restartTimer = null;
+let micDenied = false;
+let restartFails = 0;
+
+/* 语音播报：播报期间暂停识别，避免音频通道冲突导致识别永久失效 */
+let speakingCount = 0;
+let resumeAfterSpeak = false;
+
+function speak(text, {rate=1, pitch=1, interrupt=true, resume=true} = {}){
   if(!DB.voiceOn || !synth) return;
+
+  // 播报前让出音频通道
+  if(wantListening && recognizing){
+    resumeAfterSpeak = true;
+    wantListening = false;
+    clearTimeout(restartTimer);
+    try{ recognition && recognition.abort(); }catch(e){}
+    recognizing = false;
+  }
+
   try{
     if(interrupt) synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
@@ -558,27 +593,31 @@ function speak(text, {rate=1, pitch=1, interrupt=true} = {}){
     u.rate = (DB.voiceRate || 1) * rate;
     u.pitch = pitch;
     u.volume = 1;
+
+    speakingCount++;
+    const done = () => {
+      speakingCount = Math.max(0, speakingCount - 1);
+      if(speakingCount === 0 && resumeAfterSpeak){
+        resumeAfterSpeak = false;
+        if(resume && DB.voiceOn && (mode === 'awaiting' || mode === 'idle') && !recognizing){
+          setTimeout(()=>{ if(!recognizing) startListening(); }, 320);
+        }
+      }
+    };
+    u.onend = done;
+    u.onerror = done;
     synth.speak(u);
+
+    // 兜底：某些 iOS 版本不触发 onend
+    setTimeout(()=>{ if(speakingCount > 0 && !synth.speaking) done(); }, 6000);
   }catch(e){}
 }
-
-/* ===================== 环境检测 ===================== */
-const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const IS_HTTPS = location.protocol === 'https:' || location.protocol === 'file:' ||
-  location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const SECURE_OK = (typeof window.isSecureContext === 'boolean') ? window.isSecureContext : IS_HTTPS;
 
 /* iOS Safari 上：非 HTTPS 绝对无法录音；另外 iOS 对连续识别支持很差 */
 const IOS_RECOG_LIMITED = IS_IOS;   // iOS 上语音识别不可靠，走"确认模式 + 按钮兜底"
 
 /* 语音识别（连续模式，关键词触发） */
 const SR = (IS_IOS && !SECURE_OK) ? null : (window.SpeechRecognition || window.webkitSpeechRecognition);
-let recognition = null;
-let recognizing = false;
-let wantListening = false;
-let restartTimer = null;
-let micDenied = false;
 
 /* 主动申请麦克风权限（iOS 必须先 getUserMedia 才能弹权限框） */
 async function requestMic(){
@@ -606,14 +645,32 @@ function initRecognition(){
   r.interimResults = true;
   r.maxAlternatives = 3;
 
-  r.onstart = () => { recognizing = true; updateVoiceUI(); };
+  r.onstart = () => {
+    recognizing = true;
+    restartFails = 0;
+    updateVoiceUI();
+  };
   r.onend = () => {
     recognizing = false;
     updateVoiceUI();
-    if(wantListening){
-      clearTimeout(restartTimer);
-      restartTimer = setTimeout(() => { try{ r.start(); }catch(e){} }, IS_IOS ? 800 : 400);
-    }
+    if(!wantListening) return;
+    // 自动重启（浏览器静默后会自动断开，必须持续拉起重连）
+    clearTimeout(restartTimer);
+    const delay = IS_IOS ? 260 : 180;
+    restartTimer = setTimeout(() => {
+      if(!wantListening) return;
+      try{
+        r.start();
+      }catch(e){
+        restartFails++;
+        // 重试若干次失败后，提示用户手动点一下
+        if(restartFails >= 3 && mode === 'awaiting'){
+          setVoiceText('语音连接中断，<b>点这里</b>重新开始聆听，或点下方按钮');
+        }
+        clearTimeout(restartTimer);
+        restartTimer = setTimeout(()=>{ if(wantListening){ try{ r.start(); }catch(err){} } }, 700);
+      }
+    }, delay);
   };
   r.onerror = (e) => {
     recognizing = false;
@@ -628,7 +685,16 @@ function initRecognition(){
       document.getElementById('voiceToggle').classList.remove('on');
       document.getElementById('voiceToggle').textContent = '语音: 关';
     }
-    if(e.error === 'no-speech' || e.error === 'audio-capture' || e.error === 'network'){ /* 静默重试 */ }
+    // no-speech 属正常（用户没说话），保持监听即可；
+    // audio-capture / network / aborted 需要主动重连
+    if(e.error === 'audio-capture' || e.error === 'network' || e.error === 'aborted'){
+      if(wantListening && !restartTimer){
+        restartTimer = setTimeout(()=>{
+          restartTimer = null;
+          if(wantListening){ try{ r.start(); }catch(err){} }
+        }, 600);
+      }
+    }
   };
   r.onresult = (ev) => {
     let text = '';
@@ -782,6 +848,83 @@ function renderSets(){
 
 function clearTick(){ if(tickHandle){ clearInterval(tickHandle); tickHandle = null; } }
 
+/* ===================== 屏幕常亮 ===================== */
+let wakeLock = null;
+let wantWake = false;
+
+async function requestWakeLock(){
+  wantWake = true;
+  const tag = document.getElementById('keepAwakeTag');
+  if(tag) tag.classList.remove('hidden');
+  if(!('wakeLock' in navigator)){
+    // 兜底：不支持 Wake Lock 时，用隐藏 video 播放来阻止休眠（部分 iOS 版本可用）
+    fallbackKeepAwake(true);
+    return;
+  }
+  try{
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      wakeLock = null;
+      // 页面切回前台且仍在训练中时自动重新申请
+      if(wantWake && document.visibilityState === 'visible') {
+        setTimeout(()=>{ if(wantWake) requestWakeLock(); }, 300);
+      }
+    });
+  }catch(e){
+    fallbackKeepAwake(true);
+  }
+}
+
+function releaseWakeLock(){
+  wantWake = false;
+  const tag = document.getElementById('keepAwakeTag');
+  if(tag) tag.classList.add('hidden');
+  fallbackKeepAwake(false);
+  if(wakeLock){
+    try{ wakeLock.release(); }catch(e){}
+    wakeLock = null;
+  }
+}
+
+/* 兜底方案：循环播放一个极短的静音视频，阻止屏幕休眠 */
+let keepAwakeVideo = null;
+function fallbackKeepAwake(on){
+  if(!IS_IOS && ('wakeLock' in navigator)) return;   // 已有原生方案则不用兜底
+  if(on){
+    if(keepAwakeVideo) { keepAwakeVideo.play().catch(()=>{}); return; }
+    try{
+      const v = document.createElement('video');
+      v.setAttribute('playsinline','');
+      v.setAttribute('muted','');
+      v.muted = true;
+      v.loop = true;
+      // 1 秒静音视频（内联 base64，无外部依赖）
+      v.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAABAgbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAABhR0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAABAAAAAQAAAAAAAkZWR0cwAAABl0cmFrAAAAEl0KAABAAAAAAAEAAAEAAAAA';
+      v.style.cssText = 'position:fixed;left:-10px;top:-10px;width:1px;height:1px;opacity:0.01;pointer-events:none;';
+      document.body.appendChild(v);
+      v.play().catch(()=>{});
+      keepAwakeVideo = v;
+    }catch(e){}
+  } else if(keepAwakeVideo){
+    try{ keepAwakeVideo.pause(); keepAwakeVideo.remove(); }catch(e){}
+    keepAwakeVideo = null;
+  }
+}
+
+// 页面重新可见时，若还在训练则恢复常亮（iOS 切回前台会释放 wakeLock）
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && wantWake && !wakeLock){
+    requestWakeLock();
+  }
+});
+// iOS 上用户手指触碰页面后重新申请一次，成功率更高
+['touchstart','click'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    if(wantWake && !wakeLock) requestWakeLock();
+  }, {passive:true});
+});
+
+
 /* ---- 启动流程 ---- */
 async function startTraining(){
   const plan = readPlan();
@@ -811,6 +954,9 @@ async function startTraining(){
   }
 
   speak(`准备开始 ${plan.sets} 组悬吊，每组 ${plan.hold} 秒。说开始，就起跳！`, {rate: 1});
+
+  // 训练全程保持屏幕常亮
+  requestWakeLock();
 
   if(mic.ok) startListening();
 
@@ -905,10 +1051,12 @@ function toAwaitNext(){
   setVoiceText(`说「<b>开始</b>」启动第 ${currentSet + 1} 组`);
   renderSets();
   showBtns('await');
-  if(!recognizing && DB.voiceOn){
-    if(startListening() === false && !micDenied){
-      setVoiceText(`点「下一步」按钮启动第 ${currentSet + 1} 组`);
-    }
+  // 进入等待状态：让语音播报先说完，再重新拉起识别
+  if(DB.voiceOn){
+    setTimeout(()=>{
+      if(mode !== 'awaiting') return;
+      if(!recognizing) startListening();
+    }, 700);
   }
 }
 
@@ -964,6 +1112,7 @@ function finishTraining(){
   renderStats();
   renderAchievements();
   stopListening();
+  releaseWakeLock();
   showBtns('start');
   document.getElementById('planCard').style.opacity = '1';
   document.getElementById('startBtn').textContent = '▶ 再练一次';
@@ -975,6 +1124,7 @@ function stopTraining(reason){
   mode = 'idle';
   currentSet = 0;
   stopListening();
+  releaseWakeLock();
   setPhaseCard('', '准备就绪', '等待开始');
   document.getElementById('timeText').textContent = '0:30';
   document.getElementById('timeText').style.fontSize = '';
