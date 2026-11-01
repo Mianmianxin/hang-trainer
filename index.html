@@ -349,7 +349,7 @@
       <div class="logo">🤸</div>
       <div>
         <h1>小小悬挂侠</h1>
-        <div class="sub">HANG &amp; GROW · 悬吊引体训练</div>
+        <div class="sub">HANG &amp; GROW · 悬吊引体训练 <span id="verTag" style="opacity:.5">v6</span></div>
       </div>
     </div>
     <button class="icon-btn" id="settingsBtn" title="语音设置">⚙️</button>
@@ -412,6 +412,13 @@
       <div class="mic">🎤</div>
       <div class="voice-text" id="voiceText">点「开始训练」后，说「<b>开始</b>」即可启动计时</div>
       <button class="voice-toggle" id="voiceToggle">语音: 开</button>
+    </div>
+    <!-- 麦克风真实电平表：诊断用，显示原始输入音量 -->
+    <div id="micMeter" style="display:none;align-items:center;gap:8px;padding:6px 14px 2px;font-size:12px;color:var(--muted);">
+      <span>电平</span>
+      <div style="flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;">
+        <div id="micMeterFill" style="width:0%;height:100%;background:linear-gradient(90deg,#3ddc84,#ffd54a,#ff6b6b);border-radius:4px;transition:width .08s linear;"></div>
+      </div>
     </div>
   </div>
 
@@ -639,6 +646,7 @@ async function requestMic(){
       audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
     });
     micDenied = false;
+    setupMicMeter();
     return {ok:true};
   }catch(err){
     micDenied = true;
@@ -652,6 +660,38 @@ function releaseMic(){
     try{ micStream.getTracks().forEach(t => t.stop()); }catch(e){}
     micStream = null;
   }
+  try{
+    cancelAnimationFrame(meterRAF);
+    const el = document.getElementById('micMeter');
+    if(el) el.style.display = 'none';
+  }catch(e){}
+}
+
+/* 麦克风真实电平表：用原始音频数据验证"灯到底亮没亮" */
+let audioCtx = null, analyser = null, meterRAF = 0;
+function setupMicMeter(){
+  try{
+    const el = document.getElementById('micMeter'), fill = document.getElementById('micMeterFill');
+    if(!micStream || !micStream.getAudioTracks().some(t => t.readyState === 'live')) return;
+    el.style.display = 'flex';
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended'){ audioCtx.resume().catch(()=>{}); }
+    if(!analyser){
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      audioCtx.createMediaStreamSource(micStream).connect(analyser);
+    }
+    cancelAnimationFrame(meterRAF);
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    (function loop(){
+      try{
+        analyser.getByteFrequencyData(buf);
+        let sum = 0; for(let i=0;i<buf.length;i++) sum += buf[i];
+        fill.style.width = Math.min(100, sum/buf.length*1.6).toFixed(0) + '%';
+        meterRAF = requestAnimationFrame(loop);
+      }catch(e){}
+    })();
+  }catch(e){}
 }
 
 /* ============ 重建式重连 + 心跳自愈 ============ */
@@ -687,7 +727,7 @@ function scheduleReconnect(delay){
          改用指数退避（0.8s→1.6s→…→最长8s），永不放弃 */
       scheduleReconnect(Math.min(8000, 800 * Math.pow(2, restartFails - 1)));
       if(restartFails >= 3){
-        setVoiceText('语音信号弱，正在自动重连… 点下方蓝色按钮可直接开始');
+        setVoiceText(`语音信号弱，自动重连中…（错误: ${lastErr || '无事件'}）点蓝色按钮可直接开始`);
       }
     }
   }, delay);
