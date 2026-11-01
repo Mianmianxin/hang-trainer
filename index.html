@@ -813,7 +813,7 @@ function updateVoiceUI(){
   const bar = document.getElementById('voiceBar');
   if(recognizing){
     bar.classList.add('listening');
-    if(!/正在听/.test(document.getElementById('voiceText').textContent)){
+    if(!/正在听|已就绪/.test(document.getElementById('voiceText').textContent)){
       setVoiceText('正在听… 说「<b>开始</b>」启动计时');
     }
   } else {
@@ -1747,16 +1747,27 @@ document.getElementById('nextBtn').onclick = () => {
   }
 };
 
-/* 关键：借点击手势同步重启识别 → Safari 必定放行麦克风（橙色灯亮）
-   之后喊「开始」由 origOnResult → handleVoiceCommand 处理 */
-document.getElementById('micWakeBtn').onclick = () => {
+/* 关键：借点击手势强制重建音频会话 + 识别器
+   1) 彻底停掉旧识别  2) 停掉旧麦克风流（会话可能已被 iOS 挂起、灯已灭）
+   3) 在手势内重新 getUserMedia → 全新音频会话，橙色灯必亮
+   4) 成功后立刻 startListening（同一手势内，Safari 放行） */
+document.getElementById('micWakeBtn').onclick = async () => {
   if(mode !== 'awaiting') return;
   stopListening(true);
   recognition = null;
   wantListening = true;
-  lastStartAt = 0;          // 解除 400ms 防抖，强制立刻 start
-  startListening();         // 在点击手势内同步调用，Safari 100% 放行
-  requestMic();             // 同时确保 getUserMedia 会话打开（异步，不阻塞手势）
+  lastStartAt = 0;
+  releaseMic();                       // 强制关闭可能已被挂起的旧会话
+  const mic = await requestMic();     // 重新申请（权限已授予，点击手势内立即生效）
+  if(!mic.ok){
+    const why = mic.reason === 'insecure' ? 'http 页面无法用麦克风'
+      : mic.reason === 'denied' ? '麦克风权限被拒绝，请到 设置>Safari>麦克风 允许'
+      : ('获取失败: ' + ((mic.err && mic.err.name) || '未知'));
+    wantListening = false;
+    setVoiceText('⚠️ ' + why);
+    return;
+  }
+  startListening();
   setVoiceText('🎤 麦克风已就绪，请喊「<b>开始</b>」');
 };
 document.getElementById('stopBtn').onclick = () => stopTraining('手动停止');
